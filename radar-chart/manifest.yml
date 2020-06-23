@@ -1,0 +1,12 @@
+modules:
+  macro:
+    - key: radar-chart-hello-world
+      function: main
+      title: Radar Chart
+      description: Inserts a radar chart.
+  function:
+    - key: main
+      handler: index.run
+app:
+  id: 'ari:cloud:ecosystem::app/046b06bb-941c-4104-880e-749dd5482dc5'
+  name: radar-chart
