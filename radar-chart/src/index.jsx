@@ -45,56 +45,30 @@ import { traverse, } from '@atlaskit/adf-utils/traverse.es'; // .es for ES2015
 //   return response.json();
 // }
 
-// get user info from confluence
 const getDisplayName = async (userID) => {
-  const response = await api.asUser().requestConfluence('/wiki/rest/api/user/current', {
+  const response = await api.asUser().requestJira(`/rest/api/3/user?accountId=${userID}`, {
     method: 'GET',
-    credentials: 'include',
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      'Accept': 'application/json'
     }
-  })
-  .then(response => {
-    console.log(
-      `Response: ${response.status} ${response.statusText}`
-    );
-    return response.text();
-  })
-  .then(text => console.log("text: ", text))
-  .catch(err => console.error(err));
+  });
+  if (!response.ok) {
+      const err = `Error while getDisplayName`;
+      console.error(err);
+      throw new Error(err);
+  }
+  return await response.json();
 };
-
-// example code
-// const getContent = async (contentId) => {
-//     const response = await api.asApp().requestConfluence(`/wiki/rest/api/content/${contentId}?expand=body.atlas_doc_format`);
-//
-//     if (!response.ok) {
-//         const err = `Error while getContent with contentId ${contentId}: ${response.status} ${response.statusText}`;
-//         console.error(err);
-//         throw new Error(err);
-//     }
-//
-//     return await response.json();
-// };
 
 const App = () => {
   // Retrieve the configuration
   const config = useConfig();
 
-  // const { contentId } = useProductContext();
-  // const [data] = useAction(
-  //   () => null,
-  //   async () => await getContent(contentId)
-  // );
-  // console.log(data);
-
-  let userID = "5ee8466570fb110aba352634";
-  const userData = useAction(
+  // Retrieve users' display names from Jira API
+  const [user1Data] = useAction(
     () => null,
-    async () => await getDisplayName(userID)
+    async () => await getDisplayName(config.user1)
   );
-  console.log(userData);
 
   const radius = 250;
 
@@ -229,7 +203,7 @@ const App = () => {
   // Use the configuration values
   return (
     <Fragment>
-      <Text content={`${config.user1}`} />
+      <Text content={user1Data.displayName} />
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
         alt='Summary banner'
