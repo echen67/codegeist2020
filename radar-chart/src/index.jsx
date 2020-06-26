@@ -10,19 +10,91 @@ import ForgeUI, {
   UserPicker,
   Select,
   Option,
-  useConfig
+  useConfig,
+  useAction,
+  useState,
+  useProductContext
 } from "@forge/ui";
 import api from "@forge/api";
 import { traverse, } from '@atlaskit/adf-utils/traverse.es'; // .es for ES2015
 
-// import ReactDOM from 'react-dom';
-// import React, { Component } from "react";
-// import MyComp from "./MyComp";
-// import MyRadarComp from "../MyRadarComp";
+// 'Authorization': `Basic ${Buffer.from(
+// 'chenemily3@yahoo.com:4bBHuyenO9F3ZgEbGpDp9D8A'
+// ).toString('base64')}`,
+
+// Get number of issues assigned to selected user
+// async function getNumAssignedIssues(userID) {
+//   console.log("getNumAssignedIssues called");
+//   const requestUrl = '/rest/api/3/jql/parse';
+//   const bodyData = {
+//     "queries": [
+//       "assignee = 5ee8466570fb110aba352634"
+//     ]
+//   };
+//   console.log("getNumAssignedIssues middle");
+//   let response = await api.asApp().requestJira(requestUrl, {
+//     method: "POST",
+//     headers: {
+//       'Accept': 'application/json',
+//       "Content-Type": "application/json",
+//       credentials: 'same-origin'
+//     },
+//     body: JSON.stringify(bodyData)
+//   });
+//   console.log("getNumAssignedIssues end");
+//   return response.json();
+// }
+
+// get user info from confluence
+const getDisplayName = async (userID) => {
+  const response = await api.asUser().requestConfluence('/wiki/rest/api/user/current', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    console.log(
+      `Response: ${response.status} ${response.statusText}`
+    );
+    return response.text();
+  })
+  .then(text => console.log("text: ", text))
+  .catch(err => console.error(err));
+};
+
+// example code
+// const getContent = async (contentId) => {
+//     const response = await api.asApp().requestConfluence(`/wiki/rest/api/content/${contentId}?expand=body.atlas_doc_format`);
+//
+//     if (!response.ok) {
+//         const err = `Error while getContent with contentId ${contentId}: ${response.status} ${response.statusText}`;
+//         console.error(err);
+//         throw new Error(err);
+//     }
+//
+//     return await response.json();
+// };
 
 const App = () => {
   // Retrieve the configuration
   const config = useConfig();
+
+  // const { contentId } = useProductContext();
+  // const [data] = useAction(
+  //   () => null,
+  //   async () => await getContent(contentId)
+  // );
+  // console.log(data);
+
+  let userID = "5ee8466570fb110aba352634";
+  const userData = useAction(
+    () => null,
+    async () => await getDisplayName(userID)
+  );
+  console.log(userData);
 
   const radius = 250;
 
@@ -126,7 +198,7 @@ const App = () => {
       style="fill:#5D1D1D;stroke:#5D1D1D;stroke-width:1;opacity:0.3;"
     />`;
 
-  // Second users polygon
+  // Second user's polygon
   const communication2 = polarCartesian(config.communication2, 18);
   const technical2 = polarCartesian(config.technical2, 90);
   const leadership2 = polarCartesian(config.leadership2, 162);
@@ -157,8 +229,8 @@ const App = () => {
   // Use the configuration values
   return (
     <Fragment>
-    <Text content={`${config.user1}`} />
-    <Image
+      <Text content={`${config.user1}`} />
+      <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
         alt='Summary banner'
       />
