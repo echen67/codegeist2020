@@ -16,47 +16,72 @@ import ForgeUI, {
   useProductContext
 } from "@forge/ui";
 import api from "@forge/api";
-import { traverse, } from '@atlaskit/adf-utils/traverse.es'; // .es for ES2015
 
-// 'Authorization': `Basic ${Buffer.from(
-// 'chenemily3@yahoo.com:4bBHuyenO9F3ZgEbGpDp9D8A'
-// ).toString('base64')}`,
-
-// Get number of issues assigned to selected user
-// async function getNumAssignedIssues(userID) {
-//   console.log("getNumAssignedIssues called");
-//   const requestUrl = '/rest/api/3/jql/parse';
-//   const bodyData = {
-//     "queries": [
-//       "assignee = 5ee8466570fb110aba352634"
-//     ]
-//   };
-//   console.log("getNumAssignedIssues middle");
-//   let response = await api.asApp().requestJira(requestUrl, {
-//     method: "POST",
-//     headers: {
-//       'Accept': 'application/json',
-//       "Content-Type": "application/json",
-//       credentials: 'same-origin'
-//     },
-//     body: JSON.stringify(bodyData)
-//   });
-//   console.log("getNumAssignedIssues end");
-//   return response.json();
-// }
-
-const getDisplayName = async (userID) => {
-  const response = await api.asUser().requestJira(`/rest/api/3/user?accountId=${userID}`, {
-    method: 'GET',
+// Get number of issues assigned to user
+const getAssignedIssues = async (userID) => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
     headers: {
-      'Accept': 'application/json'
-    }
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "assignee = ${userID}",
+      "fields": [
+        "summary"
+      ]
+    }`
   });
+
   if (!response.ok) {
       const err = `Error while getDisplayName`;
       console.error(err);
       throw new Error(err);
   }
+
+  return await response.json();
+};
+
+// Get number of issues reported by user
+const getReportedIssues = async (userID) => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "reporter = ${userID}",
+      "fields": [
+        "comment"
+      ]
+    }`
+  });
+
+  if (!response.ok) {
+      const err = `Error while getDisplayName`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
+
+// Get user's display name from Jira API
+const getDisplayName = async (userID) => {
+  const response = await api.asApp().requestJira(`/rest/api/3/user?accountId=${userID}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+      const err = `Error while getDisplayName`;
+      console.error(err);
+      throw new Error(err);
+  }
+
   return await response.json();
 };
 
@@ -64,12 +89,36 @@ const App = () => {
   // Retrieve the configuration
   const config = useConfig();
 
-  // Retrieve users' display names from Jira API
-  const [user1Data] = useAction(
-    () => null,
-    async () => await getDisplayName(config.user1)
+  // Get first user's info
+  const [userName1] = useAction(
+    () => null, async () => await getDisplayName(config.user1)
   );
+  const [userAssignedIssues1] = useAction(
+    () => null, async () => await getAssignedIssues(config.user1)
+  );
+  const [userReportedIssues1] = useAction(
+    () => null, async () => await getReportedIssues(config.user1)
+  );
+  // console.log(userReportedIssues1.issues[0].fields.comment.comments[0].author.displayName);
+  const userNameText1 = `User 1: ${userName1.displayName}`;
+  const userAssignedIssuesText1 = `Number of assigned issues: ${userAssignedIssues1.issues.length}`;
+  const userReportedIssuesText1 = `Number of reported issues: ${userReportedIssues1.issues.length}`;
 
+  // Get second user's info
+  const [userName2] = useAction(
+    () => null, async () => await getDisplayName(config.user2)
+  );
+  const [userAssignedIssues2] = useAction(
+    () => null, async () => await getAssignedIssues(config.user2)
+  );
+  const [userReportedIssues2] = useAction(
+    () => null, async () => await getReportedIssues(config.user2)
+  );
+  const userNameText2 = `User 2: ${userName2.displayName}`;
+  const userAssignedIssuesText2 = `Number of assigned issues: ${userAssignedIssues2.issues.length}`;
+  const userReportedIssuesText2 = `Number of reported issues: ${userReportedIssues2.issues.length}`;
+
+  /* ------------------------- DRAW RADAR CHART ------------------------- */
   const radius = 250;
 
   // Draw the circles making up the base of the radar chart
@@ -203,7 +252,12 @@ const App = () => {
   // Use the configuration values
   return (
     <Fragment>
-      <Text content={user1Data.displayName} />
+      <Text content={userNameText1} />
+      <Text content={userAssignedIssuesText1} />
+      <Text content={userReportedIssuesText1} />
+      <Text content={userNameText2} />
+      <Text content={userAssignedIssuesText2} />
+      <Text content={userReportedIssuesText2} />
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
         alt='Summary banner'
