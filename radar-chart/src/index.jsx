@@ -28,13 +28,38 @@ const getAssignedIssues = async (userID) => {
     body: `{
       "jql": "assignee = ${userID}",
       "fields": [
+        "*all"
+      ]
+    }`
+  });
+
+  if (!response.ok) {
+      const err = `Error while getAssignedIssues`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
+
+// Get number of issues assigned to user that have been closed/done in the past week
+const getClosedIssues = async (userID) => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "assignee = ${userID} AND status changed TO Done AFTER -1w",
+      "fields": [
         "summary"
       ]
     }`
   });
 
   if (!response.ok) {
-      const err = `Error while getDisplayName`;
+      const err = `Error while getAssignedIssues`;
       console.error(err);
       throw new Error(err);
   }
@@ -59,7 +84,7 @@ const getReportedIssues = async (userID) => {
   });
 
   if (!response.ok) {
-      const err = `Error while getDisplayName`;
+      const err = `Error while getReportedIssues`;
       console.error(err);
       throw new Error(err);
   }
@@ -85,6 +110,7 @@ const getDisplayName = async (userID) => {
   return await response.json();
 };
 
+
 const App = () => {
   // Retrieve the configuration
   const config = useConfig();
@@ -99,10 +125,25 @@ const App = () => {
   const [userReportedIssues1] = useAction(
     () => null, async () => await getReportedIssues(config.user1)
   );
+  const [userClosedIssues1] = useAction(
+    () => null, async () => await getClosedIssues(config.user1)
+  );
   // console.log(userReportedIssues1.issues[0].fields.comment.comments[0].author.displayName);
+  // console.log(userAssignedIssues1.issues[0].fields.priority.name);
+  let userWorkRatio1 = [];
+  let userPriority1 = [];
+  for (var i = 0; i < userAssignedIssues1.issues.length; i++) {
+    userWorkRatio1.push(userAssignedIssues1.issues[i].fields.workratio);
+    userPriority1.push(userAssignedIssues1.issues[i].fields.priority.name);
+  }
   const userNameText1 = `User 1: ${userName1.displayName}`;
   const userAssignedIssuesText1 = `Number of assigned issues: ${userAssignedIssues1.issues.length}`;
   const userReportedIssuesText1 = `Number of reported issues: ${userReportedIssues1.issues.length}`;
+  const userGroupsText1 = `Number of groups user is in: ${userName1.groups.size}`;
+  const userClosedIssuesText1 = `Number of assigned issues closed in the past week: ${userClosedIssues1.issues.length}`;
+  const userWorkRatioText1 = `Work ratios: ${userWorkRatio1}`;
+  const userPriorityText1 = `Priorities: ${userPriority1}`;
+  console.log(userClosedIssues1.issues);
 
   // Get second user's info
   const [userName2] = useAction(
@@ -114,9 +155,22 @@ const App = () => {
   const [userReportedIssues2] = useAction(
     () => null, async () => await getReportedIssues(config.user2)
   );
+  const [userClosedIssues2] = useAction(
+    () => null, async () => await getClosedIssues(config.user2)
+  );
+  let userWorkRatio2 = [];
+  let userPriority2 = [];
+  for (var i = 0; i < userAssignedIssues2.issues.length; i++) {
+    userWorkRatio2.push(userAssignedIssues2.issues[i].fields.workratio);
+    userPriority2.push(userAssignedIssues2.issues[i].fields.priority.name);
+  }
   const userNameText2 = `User 2: ${userName2.displayName}`;
   const userAssignedIssuesText2 = `Number of assigned issues: ${userAssignedIssues2.issues.length}`;
   const userReportedIssuesText2 = `Number of reported issues: ${userReportedIssues2.issues.length}`;
+  const userGroupsText2 = `Number of groups user is in: ${userName2.groups.size}`;
+  const userClosedIssuesText2 = `Number of assigned issues closed in the past week: ${userClosedIssues2.issues.length}`;
+  const userWorkRatioText2 = `Work ratios: ${userWorkRatio2}`;
+  const userPriorityText2 = `Priorities: ${userPriority2}`;
 
   /* ------------------------- DRAW RADAR CHART ------------------------- */
   const radius = 250;
@@ -255,9 +309,18 @@ const App = () => {
       <Text content={userNameText1} />
       <Text content={userAssignedIssuesText1} />
       <Text content={userReportedIssuesText1} />
+      <Text content={userGroupsText1} />
+      <Text content={userClosedIssuesText1} />
+      <Text content={userWorkRatioText1} />
+      <Text content={userPriorityText1} />
+
       <Text content={userNameText2} />
       <Text content={userAssignedIssuesText2} />
       <Text content={userReportedIssuesText2} />
+      <Text content={userGroupsText2} />
+      <Text content={userClosedIssuesText2} />
+      <Text content={userWorkRatioText2} />
+      <Text content={userPriorityText2} />
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
         alt='Summary banner'
