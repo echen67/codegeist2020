@@ -51,7 +51,7 @@ const getClosedIssues = async (userID) => {
       "Content-Type": "application/json"
     },
     body: `{
-      "jql": "assignee = ${userID} AND status changed TO Done AFTER -1w",
+      "jql": "assignee = ${userID} AND (status = Done AND status changed to done after -1w) OR (status = Closed AND status changed to closed after -1w)",
       "fields": [
         "summary"
       ]
@@ -59,7 +59,7 @@ const getClosedIssues = async (userID) => {
   });
 
   if (!response.ok) {
-      const err = `Error while getAssignedIssues`;
+      const err = `Error while getClosedIssues`;
       console.error(err);
       throw new Error(err);
   }
@@ -85,6 +85,56 @@ const getReportedIssues = async (userID) => {
 
   if (!response.ok) {
       const err = `Error while getReportedIssues`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
+
+// Get number of issues user is watching
+const getWatchedIssues = async (userID) => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "watcher = ${userID}",
+      "fields": [
+        "summary"
+      ]
+    }`
+  });
+
+  if (!response.ok) {
+      const err = `Error while getWatchedIssues`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
+
+// Get number of issues created by user
+const getCreatedIssues = async (userID) => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "creator = ${userID}",
+      "fields": [
+        "summary"
+      ]
+    }`
+  });
+
+  if (!response.ok) {
+      const err = `Error while getCreatedIssues`;
       console.error(err);
       throw new Error(err);
   }
@@ -128,8 +178,13 @@ const App = () => {
   const [userClosedIssues1] = useAction(
     () => null, async () => await getClosedIssues(config.user1)
   );
+  const [userWatchedIssues1] = useAction(
+    () => null, async () => await getWatchedIssues(config.user1)
+  );
+  const [userCreatedIssues1] = useAction(
+    () => null, async () => await getCreatedIssues(config.user1)
+  );
   // console.log(userReportedIssues1.issues[0].fields.comment.comments[0].author.displayName);
-  // console.log(userAssignedIssues1.issues[0].fields.priority.name);
   let userWorkRatio1 = [];
   let userPriority1 = [];
   for (var i = 0; i < userAssignedIssues1.issues.length; i++) {
@@ -143,7 +198,10 @@ const App = () => {
   const userClosedIssuesText1 = `Number of assigned issues closed in the past week: ${userClosedIssues1.issues.length}`;
   const userWorkRatioText1 = `Work ratios: ${userWorkRatio1}`;
   const userPriorityText1 = `Priorities: ${userPriority1}`;
-  console.log(userClosedIssues1.issues);
+  const userWatchedIssuesText1 = `Number of watched issues: ${userWatchedIssues1.issues.length}`;
+  const userCreatedIssuesText1 = `Number of created issues: ${userCreatedIssues1.issues.length}`;
+  // const userOverdue
+  // console.log(userAssignedIssues1.issues[0].fields);
 
   // Get second user's info
   const [userName2] = useAction(
@@ -158,6 +216,12 @@ const App = () => {
   const [userClosedIssues2] = useAction(
     () => null, async () => await getClosedIssues(config.user2)
   );
+  const [userWatchedIssues2] = useAction(
+    () => null, async () => await getWatchedIssues(config.user2)
+  );
+  const [userCreatedIssues2] = useAction(
+    () => null, async () => await getCreatedIssues(config.user2)
+  );
   let userWorkRatio2 = [];
   let userPriority2 = [];
   for (var i = 0; i < userAssignedIssues2.issues.length; i++) {
@@ -171,6 +235,8 @@ const App = () => {
   const userClosedIssuesText2 = `Number of assigned issues closed in the past week: ${userClosedIssues2.issues.length}`;
   const userWorkRatioText2 = `Work ratios: ${userWorkRatio2}`;
   const userPriorityText2 = `Priorities: ${userPriority2}`;
+  const userWatchedIssuesText2 = `Number of watched issues: ${userWatchedIssues2.issues.length}`;
+  const userCreatedIssuesText2 = `Number of created issues: ${userCreatedIssues2.issues.length}`;
 
   /* ------------------------- DRAW RADAR CHART ------------------------- */
   const radius = 250;
@@ -313,6 +379,8 @@ const App = () => {
       <Text content={userClosedIssuesText1} />
       <Text content={userWorkRatioText1} />
       <Text content={userPriorityText1} />
+      <Text content={userWatchedIssuesText1} />
+      <Text content={userCreatedIssuesText1} />
 
       <Text content={userNameText2} />
       <Text content={userAssignedIssuesText2} />
@@ -321,6 +389,8 @@ const App = () => {
       <Text content={userClosedIssuesText2} />
       <Text content={userWorkRatioText2} />
       <Text content={userPriorityText2} />
+      <Text content={userWatchedIssuesText2} />
+      <Text content={userCreatedIssuesText2} />
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
         alt='Summary banner'
