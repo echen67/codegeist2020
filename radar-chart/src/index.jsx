@@ -17,6 +17,7 @@ import ForgeUI, {
 } from "@forge/ui";
 import api from "@forge/api";
 
+/* GET USER-SPECIFIC DATA */
 // Get number of issues assigned to user
 const getAssignedIssues = async (userID) => {
   const response = await api.asApp().requestJira('/rest/api/3/search', {
@@ -51,7 +52,7 @@ const getClosedIssues = async (userID) => {
       "Content-Type": "application/json"
     },
     body: `{
-      "jql": "assignee = ${userID} AND (status = Done AND status changed to done after -1w) OR (status = Closed AND status changed to closed after -1w)",
+      "jql": "assignee = ${userID} AND (status = Done AND status changed to done after -1w) OR (status = Closed AND status changed to closed after -1w) OR (status = Resolved AND status changed to Resolved after -1w)",
       "fields": [
         "summary"
       ]
@@ -60,6 +61,31 @@ const getClosedIssues = async (userID) => {
 
   if (!response.ok) {
       const err = `Error while getClosedIssues`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
+
+// Get number of overdue issues that are still open/in progress
+const getOpenOverdueIssues = async (userID) => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "assignee = ${userID} AND (status != Done AND status != Closed AND status != Resolved AND duedate < now())",
+      "fields": [
+        "summary"
+      ]
+    }`
+  });
+
+  if (!response.ok) {
+      const err = `Error while getOpenOverdueIssues`;
       console.error(err);
       throw new Error(err);
   }
@@ -160,10 +186,42 @@ const getDisplayName = async (userID) => {
   return await response.json();
 };
 
+/* GET GLOBAL MAX VALUES */
+// Get total number of users -- query doesn't work for some reason?
+const getTotalUsers = async (query) => {
+  const response = await api.asApp().requestJira(`/rest/api/3/users/search?${query}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+      const err = `Error while getAssignedIssues`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
 
 const App = () => {
   // Retrieve the configuration
   const config = useConfig();
+
+  // Get global max values
+  const [totalUsers] = useAction(
+    () => null, async () => await getTotalUsers("")
+  );
+  let numUsers = 0;
+  for (var i = 0; i < totalUsers.length; i++) {
+    if (totalUsers[i].accountType == "atlassian") {
+      numUsers += 1;
+    }
+  }
+  console.log(numUsers);
+  const numUsersText = `Total number of users: ${numUsers}`;
 
   // Get first user's info
   const [userName1] = useAction(
@@ -184,12 +242,18 @@ const App = () => {
   const [userCreatedIssues1] = useAction(
     () => null, async () => await getCreatedIssues(config.user1)
   );
-  // console.log(userReportedIssues1.issues[0].fields.comment.comments[0].author.displayName);
+  const [userOverdueIssues1] = useAction(
+    () => null, async () => await getOpenOverdueIssues(config.user1)
+  );
   let userWorkRatio1 = [];
   let userPriority1 = [];
+  let userClosedOverdueIssues1 = 0;   // JQL does not allow date comparison, so workaround
   for (var i = 0; i < userAssignedIssues1.issues.length; i++) {
     userWorkRatio1.push(userAssignedIssues1.issues[i].fields.workratio);
     userPriority1.push(userAssignedIssues1.issues[i].fields.priority.name);
+    if (userAssignedIssues1.issues[i].fields.duedate < userAssignedIssues1.issues[i].fields.resolutiondate) {
+      userClosedOverdueIssues1 += 1;
+    }
   }
   const userNameText1 = `User 1: ${userName1.displayName}`;
   const userAssignedIssuesText1 = `Number of assigned issues: ${userAssignedIssues1.issues.length}`;
@@ -200,8 +264,8 @@ const App = () => {
   const userPriorityText1 = `Priorities: ${userPriority1}`;
   const userWatchedIssuesText1 = `Number of watched issues: ${userWatchedIssues1.issues.length}`;
   const userCreatedIssuesText1 = `Number of created issues: ${userCreatedIssues1.issues.length}`;
-  // const userOverdue
-  // console.log(userAssignedIssues1.issues[0].fields);
+  const userOverdueIssuesText1 = `Number of overdue issues: ${userOverdueIssues1.issues.length + userClosedOverdueIssues1}`;
+  // console.log(userAssignedIssues1.issues[1].fields.duedate < userAssignedIssues1.issues[1].fields.resolutiondate);
 
   // Get second user's info
   const [userName2] = useAction(
@@ -222,11 +286,18 @@ const App = () => {
   const [userCreatedIssues2] = useAction(
     () => null, async () => await getCreatedIssues(config.user2)
   );
+  const [userOverdueIssues2] = useAction(
+    () => null, async () => await getOpenOverdueIssues(config.user2)
+  );
   let userWorkRatio2 = [];
   let userPriority2 = [];
+  let userClosedOverdueIssues2 = 0;
   for (var i = 0; i < userAssignedIssues2.issues.length; i++) {
     userWorkRatio2.push(userAssignedIssues2.issues[i].fields.workratio);
     userPriority2.push(userAssignedIssues2.issues[i].fields.priority.name);
+    if (userAssignedIssues2.issues[i].fields.duedate < userAssignedIssues2.issues[i].fields.resolutiondate) {
+      userClosedOverdueIssues2 += 1;
+    }
   }
   const userNameText2 = `User 2: ${userName2.displayName}`;
   const userAssignedIssuesText2 = `Number of assigned issues: ${userAssignedIssues2.issues.length}`;
@@ -237,6 +308,7 @@ const App = () => {
   const userPriorityText2 = `Priorities: ${userPriority2}`;
   const userWatchedIssuesText2 = `Number of watched issues: ${userWatchedIssues2.issues.length}`;
   const userCreatedIssuesText2 = `Number of created issues: ${userCreatedIssues2.issues.length}`;
+  const userOverdueIssuesText2 = `Number of overdue issues: ${userOverdueIssues2.issues.length + userClosedOverdueIssues2}`;
 
   /* ------------------------- DRAW RADAR CHART ------------------------- */
   const radius = 250;
@@ -367,11 +439,14 @@ const App = () => {
                   viewBox="0 0 ${radius*2+100} ${radius*2+100}"
                   width="${radius*2}"
                   height="${radius*2}"
-                >` + `<g>` + circle + line + poly + poly2 + caption + `</g>` + `</svg>`
+                >` + `<g>` + circle + line + poly + poly2 + caption + `</g>` + `</svg>`;
 
   // Use the configuration values
   return (
     <Fragment>
+      <Text>Max Values:</Text>
+      <Text content={numUsersText} />
+
       <Text content={userNameText1} />
       <Text content={userAssignedIssuesText1} />
       <Text content={userReportedIssuesText1} />
@@ -381,6 +456,7 @@ const App = () => {
       <Text content={userPriorityText1} />
       <Text content={userWatchedIssuesText1} />
       <Text content={userCreatedIssuesText1} />
+      <Text content={userOverdueIssuesText1} />
 
       <Text content={userNameText2} />
       <Text content={userAssignedIssuesText2} />
@@ -391,9 +467,11 @@ const App = () => {
       <Text content={userPriorityText2} />
       <Text content={userWatchedIssuesText2} />
       <Text content={userCreatedIssuesText2} />
+      <Text content={userOverdueIssuesText2} />
+
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
-        alt='Summary banner'
+        alt='Radar chart'
       />
     </Fragment>
   );
