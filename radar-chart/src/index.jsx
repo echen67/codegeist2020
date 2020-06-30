@@ -27,7 +27,7 @@ const getAssignedIssues = async (userID) => {
       "Content-Type": "application/json"
     },
     body: `{
-      "jql": "assignee = ${userID}",
+      "jql": "assignee = ${userID} ORDER BY createdDate ASC",
       "fields": [
         "*all"
       ]
@@ -44,7 +44,7 @@ const getAssignedIssues = async (userID) => {
 };
 
 // Get number of issues assigned to user that have been closed/done in the past week
-const getClosedIssues = async (userID) => {
+const getRecentClosedIssues = async (userID) => {
   const response = await api.asApp().requestJira('/rest/api/3/search', {
     method: 'POST',
     headers: {
@@ -251,6 +251,32 @@ const getTotalPriority = async (priority) => {
   return await response.json();
 };
 
+// Get total number of comments
+const getAllIssues = async () => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "ORDER BY createdDate ASC",
+      "fields": [
+        "comment"
+      ]
+    }`
+  });
+
+  if (!response.ok) {
+      const err = `Error while getAllIssues`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
+
+/* ------------------------- APP ------------------------- */
 const App = () => {
   // Retrieve the configuration
   const config = useConfig();
@@ -280,77 +306,95 @@ const App = () => {
   numHigh = `Total number of high priority issues: ${numHigh.issues.length}`;
   numHighest = `Total number of highest priority issues: ${numHighest.issues.length}`;
 
+  // Get total comments
+  let numComments = 0;
+  const allIssues = useAction(() => null, async () => await getAllIssues());
+  for (var i = 0; i < allIssues[0].issues.length; i++) {
+    numComments += allIssues[0].issues[i].fields.comment.comments.length;
+    // for (var j = 0; j < allIssues[0].issues[i].fields.comment.comments.length; j++) {
+    //   console.log(allIssues[0].issues[i].fields.comment.comments[j]);
+    // }
+    // console.log(allIssues[0].issues[i].fields.comment.comments.length);
+  }
+  // console.log(numComments);
+  // console.log("end");
+  numComments = `Total number of comments: ${numComments}`;
+
   /* GET FIRST USER'S INFO */
-  let [userName1] = useAction(
-    () => null, async () => await getDisplayName(config.user1)
-  );
-  let [userAssignedIssues1] = useAction(
-    () => null, async () => await getAssignedIssues(config.user1)
-  );
-  let [userReportedIssues1] = useAction(
-    () => null, async () => await getReportedIssues(config.user1)
-  );
-  let [userClosedIssues1] = useAction(
-    () => null, async () => await getClosedIssues(config.user1)
-  );
-  let [userWatchedIssues1] = useAction(
-    () => null, async () => await getWatchedIssues(config.user1)
-  );
-  let [userCreatedIssues1] = useAction(
-    () => null, async () => await getCreatedIssues(config.user1)
-  );
-  let [userOverdueIssues1] = useAction(
-    () => null, async () => await getOpenOverdueIssues(config.user1)
-  );
+  let [userName1] = useAction(() => null, async () => await getDisplayName(config.user1));
+  let [userAssignedIssues1] = useAction(() => null, async () => await getAssignedIssues(config.user1));
+  let [userReportedIssues1] = useAction(() => null, async () => await getReportedIssues(config.user1));
+  let [userRecentClosedIssues1] = useAction(() => null, async () => await getRecentClosedIssues(config.user1));
+  let [userWatchedIssues1] = useAction(() => null, async () => await getWatchedIssues(config.user1));
+  let [userCreatedIssues1] = useAction(() => null, async () => await getCreatedIssues(config.user1));
+  let [userOverdueIssues1] = useAction(() => null, async () => await getOpenOverdueIssues(config.user1));
   let userWorkRatio1 = [];
   let userPriority1 = [];
   let userClosedOverdueIssues1 = 0;   // JQL does not allow date comparison, so workaround
+  let userOnTimeIssues1 = 0;
   for (var i = 0; i < userAssignedIssues1.issues.length; i++) {
     userWorkRatio1.push(userAssignedIssues1.issues[i].fields.workratio);
     userPriority1.push(userAssignedIssues1.issues[i].fields.priority.name);
+    // won't double count with getOpenOverdueIssues because that func only looks at non-closed issues; here we only look at resolved issues
     if (userAssignedIssues1.issues[i].fields.duedate < userAssignedIssues1.issues[i].fields.resolutiondate) {
       userClosedOverdueIssues1 += 1;
     }
+    // get number of issues completed on time
+    if (userAssignedIssues1.issues[i].fields.resolutiondate != null && userAssignedIssues1.issues[i].fields.duedate >= userAssignedIssues1.issues[i].fields.resolutiondate) {
+      userOnTimeIssues1 += 1;
+    }
+    // console.log(userAssignedIssues1.issues[i].fields.comment.comments.length);
+    // for (var j = 0; j < userAssignedIssues1.issues[i].fields.comment.comments.length; j++) {
+    //   console.log(userAssignedIssues1.issues[i].fields.comment.comments[j].body);
+    // }
+    // console.log(userAssignedIssues1.issues[i].fields.created);
   }
+  // console.log("end");
   const userGroupsText1 = `Number of groups user is in: ${userName1.groups.size}`;
   userName1 = `User 1: ${userName1.displayName}`;
   userAssignedIssues1 = `Number of assigned issues: ${userAssignedIssues1.issues.length}`;
   userReportedIssues1 = `Number of reported issues: ${userReportedIssues1.issues.length}`;
-  userClosedIssues1 = `Number of assigned issues closed in the past week: ${userClosedIssues1.issues.length}`;
+  userRecentClosedIssues1 = `Number of assigned issues closed in the past week: ${userRecentClosedIssues1.issues.length}`;
   userWorkRatio1 = `Work ratios: ${userWorkRatio1}`;
   userPriority1 = `Priorities: ${userPriority1}`;
   userWatchedIssues1 = `Number of watched issues: ${userWatchedIssues1.issues.length}`;
   userCreatedIssues1 = `Number of created issues: ${userCreatedIssues1.issues.length}`;
   userOverdueIssues1 = `Number of overdue issues: ${userOverdueIssues1.issues.length + userClosedOverdueIssues1}`;
+  userOnTimeIssues1 = `Number of issues completed on time: ${userOnTimeIssues1}`;
 
   /* GET SECOND USER'S INFO */
-  const [userName2] = useAction(() => null, async () => await getDisplayName(config.user2));
-  const [userAssignedIssues2] = useAction(() => null, async () => await getAssignedIssues(config.user2));
-  const [userReportedIssues2] = useAction(() => null, async () => await getReportedIssues(config.user2));
-  const [userClosedIssues2] = useAction(() => null, async () => await getClosedIssues(config.user2));
-  const [userWatchedIssues2] = useAction(() => null, async () => await getWatchedIssues(config.user2));
-  const [userCreatedIssues2] = useAction(() => null, async () => await getCreatedIssues(config.user2));
-  const [userOverdueIssues2] = useAction(() => null, async () => await getOpenOverdueIssues(config.user2));
+  let [userName2] = useAction(() => null, async () => await getDisplayName(config.user2));
+  let [userAssignedIssues2] = useAction(() => null, async () => await getAssignedIssues(config.user2));
+  let [userReportedIssues2] = useAction(() => null, async () => await getReportedIssues(config.user2));
+  let [userRecentClosedIssues2] = useAction(() => null, async () => await getRecentClosedIssues(config.user2));
+  let [userWatchedIssues2] = useAction(() => null, async () => await getWatchedIssues(config.user2));
+  let [userCreatedIssues2] = useAction(() => null, async () => await getCreatedIssues(config.user2));
+  let [userOverdueIssues2] = useAction(() => null, async () => await getOpenOverdueIssues(config.user2));
   let userWorkRatio2 = [];
   let userPriority2 = [];
   let userClosedOverdueIssues2 = 0;
+  let userOnTimeIssues2 = 0;
   for (var i = 0; i < userAssignedIssues2.issues.length; i++) {
     userWorkRatio2.push(userAssignedIssues2.issues[i].fields.workratio);
     userPriority2.push(userAssignedIssues2.issues[i].fields.priority.name);
     if (userAssignedIssues2.issues[i].fields.duedate < userAssignedIssues2.issues[i].fields.resolutiondate) {
       userClosedOverdueIssues2 += 1;
     }
+    if (userAssignedIssues2.issues[i].fields.resolutiondate != null && userAssignedIssues2.issues[i].fields.duedate >= userAssignedIssues2.issues[i].fields.resolutiondate) {
+      userOnTimeIssues2 += 1;
+    }
   }
-  const userNameText2 = `User 2: ${userName2.displayName}`;
-  const userAssignedIssuesText2 = `Number of assigned issues: ${userAssignedIssues2.issues.length}`;
-  const userReportedIssuesText2 = `Number of reported issues: ${userReportedIssues2.issues.length}`;
   const userGroupsText2 = `Number of groups user is in: ${userName2.groups.size}`;
-  const userClosedIssuesText2 = `Number of assigned issues closed in the past week: ${userClosedIssues2.issues.length}`;
-  const userWorkRatioText2 = `Work ratios: ${userWorkRatio2}`;
-  const userPriorityText2 = `Priorities: ${userPriority2}`;
-  const userWatchedIssuesText2 = `Number of watched issues: ${userWatchedIssues2.issues.length}`;
-  const userCreatedIssuesText2 = `Number of created issues: ${userCreatedIssues2.issues.length}`;
-  const userOverdueIssuesText2 = `Number of overdue issues: ${userOverdueIssues2.issues.length + userClosedOverdueIssues2}`;
+  userName2 = `User 2: ${userName2.displayName}`;
+  userAssignedIssues2 = `Number of assigned issues: ${userAssignedIssues2.issues.length}`;
+  userReportedIssues2 = `Number of reported issues: ${userReportedIssues2.issues.length}`;
+  userRecentClosedIssues2 = `Number of assigned issues closed in the past week: ${userRecentClosedIssues2.issues.length}`;
+  userWorkRatio2 = `Work ratios: ${userWorkRatio2}`;
+  userPriority2 = `Priorities: ${userPriority2}`;
+  userWatchedIssues2 = `Number of watched issues: ${userWatchedIssues2.issues.length}`;
+  userCreatedIssues2 = `Number of created issues: ${userCreatedIssues2.issues.length}`;
+  userOverdueIssues2 = `Number of overdue issues: ${userOverdueIssues2.issues.length + userClosedOverdueIssues2}`;
+  userOnTimeIssues2 = `Number of issues completed on time: ${userOnTimeIssues2}`;
 
   /* ------------------------- DRAW RADAR CHART ------------------------- */
   const radius = 250;
@@ -494,28 +538,31 @@ const App = () => {
       <Text content={numMedium} />
       <Text content={numHigh} />
       <Text content={numHighest} />
+      <Text content={numComments} />
 
       <Text content={userName1} />
       <Text content={userAssignedIssues1} />
       <Text content={userReportedIssues1} />
       <Text content={userGroupsText1} />
-      <Text content={userClosedIssues1} />
+      <Text content={userRecentClosedIssues1} />
       <Text content={userWorkRatio1} />
       <Text content={userPriority1} />
       <Text content={userWatchedIssues1} />
       <Text content={userCreatedIssues1} />
       <Text content={userOverdueIssues1} />
+      <Text content={userOnTimeIssues1} />
 
-      <Text content={userNameText2} />
-      <Text content={userAssignedIssuesText2} />
-      <Text content={userReportedIssuesText2} />
+      <Text content={userName2} />
+      <Text content={userAssignedIssues2} />
+      <Text content={userReportedIssues2} />
       <Text content={userGroupsText2} />
-      <Text content={userClosedIssuesText2} />
-      <Text content={userWorkRatioText2} />
-      <Text content={userPriorityText2} />
-      <Text content={userWatchedIssuesText2} />
-      <Text content={userCreatedIssuesText2} />
-      <Text content={userOverdueIssuesText2} />
+      <Text content={userRecentClosedIssues2} />
+      <Text content={userWorkRatio2} />
+      <Text content={userPriority2} />
+      <Text content={userWatchedIssues2} />
+      <Text content={userCreatedIssues2} />
+      <Text content={userOverdueIssues2} />
+      <Text content={userOnTimeIssues2} />
 
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
