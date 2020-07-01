@@ -288,11 +288,9 @@ const App = () => {
   for (var i = 0; i < totalUsers.length; i++) {
     if (totalUsers[i].accountType == "atlassian") { numUsers += 1; }
   }
-  numUsers = `Total number of users: ${numUsers}`;
 
   // Get total groups
   let [numGroups] = useAction(() => null, async () => await getTotalGroups());
-  numGroups = `Total number of groups: ${numGroups.groups.total}`;
 
   // Get total number of issues per priority
   let [numLowest] = useAction(() => null, async () => await getTotalPriority("Lowest"));
@@ -300,25 +298,41 @@ const App = () => {
   let [numMedium] = useAction(() => null, async () => await getTotalPriority("Medium"));
   let [numHigh] = useAction(() => null, async () => await getTotalPriority("High"));
   let [numHighest] = useAction(() => null, async () => await getTotalPriority("Highest"));
+
+  // Get total comments, plus number of comments per user
+  let numComments = 0;
+  let userComments1 = 0;
+  let userComments2 = 0;
+  const allIssues = useAction(() => null, async () => await getAllIssues());
+  // Iterate through all issues and then through all comments on each issue
+  for (var i = 0; i < allIssues[0].issues.length; i++) {
+    numComments += allIssues[0].issues[i].fields.comment.comments.length;
+    for (var j = 0; j < allIssues[0].issues[i].fields.comment.comments.length; j++) {
+      // Check the author of each comment
+      if (allIssues[0].issues[i].fields.comment.comments[j].author.accountId == config.user1) {
+        userComments1 += 1;
+      } else if (allIssues[0].issues[i].fields.comment.comments[j].author.accountId == config.user2) {
+        userComments2 += 1;
+      }
+    }
+  }
+
+  /* GET AVERAGE VALUES */
+  let avgComments = numComments / numUsers;
+
+  // Transform values to text
+  numUsers = `Total number of users: ${numUsers}`;
+  numGroups = `Total number of groups: ${numGroups.groups.total}`;
+  numComments = `Total number of comments: ${numComments}`;
+  userComments1 = `Number of comments: ${userComments1}`;
+  userComments2 = `Number of comments: ${userComments2}`;
   numLowest = `Total number of lowest priority issues: ${numLowest.issues.length}`;
   numLow = `Total number of low priority issues: ${numLow.issues.length}`;
   numMedium = `Total number of medium priority issues: ${numMedium.issues.length}`;
   numHigh = `Total number of high priority issues: ${numHigh.issues.length}`;
   numHighest = `Total number of highest priority issues: ${numHighest.issues.length}`;
 
-  // Get total comments
-  let numComments = 0;
-  const allIssues = useAction(() => null, async () => await getAllIssues());
-  for (var i = 0; i < allIssues[0].issues.length; i++) {
-    numComments += allIssues[0].issues[i].fields.comment.comments.length;
-    // for (var j = 0; j < allIssues[0].issues[i].fields.comment.comments.length; j++) {
-    //   console.log(allIssues[0].issues[i].fields.comment.comments[j]);
-    // }
-    // console.log(allIssues[0].issues[i].fields.comment.comments.length);
-  }
-  // console.log(numComments);
-  // console.log("end");
-  numComments = `Total number of comments: ${numComments}`;
+  avgComments = `Average number of comments: ${avgComments}`;
 
   /* GET FIRST USER'S INFO */
   let [userName1] = useAction(() => null, async () => await getDisplayName(config.user1));
@@ -530,7 +544,7 @@ const App = () => {
   // Use the configuration values
   return (
     <Fragment>
-      <Text>Max Values:</Text>
+      <Text>Total Values:</Text>
       <Text content={numUsers} />
       <Text content={numGroups} />
       <Text content={numLowest} />
@@ -539,6 +553,9 @@ const App = () => {
       <Text content={numHigh} />
       <Text content={numHighest} />
       <Text content={numComments} />
+
+      <Text>Average Values:</Text>
+      <Text content={avgComments} />
 
       <Text content={userName1} />
       <Text content={userAssignedIssues1} />
@@ -551,6 +568,7 @@ const App = () => {
       <Text content={userCreatedIssues1} />
       <Text content={userOverdueIssues1} />
       <Text content={userOnTimeIssues1} />
+      <Text content={userComments1} />
 
       <Text content={userName2} />
       <Text content={userAssignedIssues2} />
@@ -563,6 +581,7 @@ const App = () => {
       <Text content={userCreatedIssues2} />
       <Text content={userOverdueIssues2} />
       <Text content={userOnTimeIssues2} />
+      <Text content={userComments2} />
 
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
