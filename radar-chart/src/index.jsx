@@ -354,6 +354,31 @@ const getTotalClosed = async () => {
   return await response.json();
 };
 
+// Get total number of issues closed in past week
+const getTotalRecentClosed = async() => {
+  const response = await api.asApp().requestJira('/rest/api/3/search', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      "Content-Type": "application/json"
+    },
+    body: `{
+      "jql": "(status = Done AND status changed to done after -1w) OR (status = Closed AND status changed to closed after -1w) OR (status = Resolved AND status changed to Resolved after -1w)",
+      "fields": [
+        "duedate"
+      ]
+    }`
+  });
+
+  if (!response.ok) {
+      const err = `Error while getTotalRecentClosed`;
+      console.error(err);
+      throw new Error(err);
+  }
+
+  return await response.json();
+};
+
 /* ------------------------- APP ------------------------- */
 const App = () => {
   // Retrieve the configuration
@@ -398,8 +423,9 @@ const App = () => {
     numWatches += allIssues[0].issues[i].fields.watches.watchCount;
   }
 
-  // Get total number of closed issues
+  // Get total number of closed issues and recently closed issues
   let [numClosed] = useAction(() => null, async () => await getTotalClosed());
+  let [numRecentClosed] = useAction(() => null, async () => await getTotalRecentClosed());
   // Get total number of on-time issues
   let numOnTime = 0;
   for (var i = 0; i < numClosed.issues.length; i++) {
@@ -409,13 +435,13 @@ const App = () => {
   }
 
   /* CALCULATE AVERAGE VALUES */
-  let avgComments = numComments / numUsers;
-
-  // Transform values to text
-  avgComments = `(COMMUNICATION) Average number of comments: ${avgComments}`;
+  const avgComments = `(COMMUNICATION) Average number of comments: ${numComments / numUsers}`;
   const avgWatches = `(INVOLVEMENT) Average number of watches: ${numWatches / numUsers}`
   const avgOnTime = `(MEETING DEADLINES) Average number of on-time issues: ${numOnTime / numClosed.issues.length}`;
+  const avgPriority = `(TECHNICAL EXPERTISE) Average priority: ${(numLowest.issues.length + 2*numLow.issues.length + 3*numMedium.issues.length + 4*numHigh.issues.length + 5*numHighest.issues.length) / numUsers}`;
+  const avgRecentClosed = `(PRODUCTIVITY) Average number of recently closed issues: ${numRecentClosed.issues.length / numUsers}`;
 
+  // Transform values to text
   numUsers = `Total number of users: ${numUsers}`;
   numGroups = `Total number of groups: ${numGroups.groups.total}`;
   numComments = `Total number of comments: ${numComments}`;
@@ -429,6 +455,7 @@ const App = () => {
   numClosed = `Total number of closed issues: ${numClosed.issues.length}`;
   numOnTime = `Total number of on-time issues: ${numOnTime}`;
   numWatches = `Total number of watches: ${numWatches}`;
+  numRecentClosed = `Total number of issues closed in past week: ${numRecentClosed.issues.length}`;
 
 
   /* GET FIRST USER'S INFO */
@@ -670,11 +697,14 @@ const App = () => {
       <Text content={numClosed} />
       <Text content={numWatches} />
       <Text content={numOnTime} />
+      <Text content={numRecentClosed} />
 
       <Text>Average Values:</Text>
       <Text content={avgComments} />
       <Text content={avgWatches} />
       <Text content={avgOnTime} />
+      <Text content={avgPriority} />
+      <Text content={avgRecentClosed} />
 
       <Text content={userName1} />
       <Text content={userAssignedIssues1} />
