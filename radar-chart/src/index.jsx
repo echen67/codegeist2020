@@ -257,26 +257,6 @@ const getTotalUsers = async (query) => {
   return await response.json();
 };
 
-// Get total number of user groups
-const getTotalGroups = async () => {
-  const response = await api.asApp().requestJira(`/rest/api/3/groupuserpicker?query=`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    }
-  });
-
-  if (!response.ok) {
-      const err = `Error while getTotalGroups`;
-      console.error(err);
-      console.log(response.status);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
 // Get total number of issues with [PRIORITY LEVEL] (lowest, low, medium, high, highest)
 const getTotalPriority = async (priority) => {
   const response = await api.asApp().requestJira('/rest/api/3/search', {
@@ -314,7 +294,12 @@ const getTotalIssues = async () => {
       "jql": "ORDER BY createdDate ASC",
       "fields": [
         "comment",
-        "watches"
+        "watches",
+        "priority",
+        "assignee",
+        "status",
+        "resolutiondate",
+        "duedate"
       ]
     }`
   });
@@ -365,7 +350,7 @@ const getTotalRecentClosed = async() => {
     body: `{
       "jql": "(status = Done AND status changed to done after -1w) OR (status = Closed AND status changed to closed after -1w) OR (status = Resolved AND status changed to Resolved after -1w)",
       "fields": [
-        "duedate"
+        "assignee"
       ]
     }`
   });
@@ -386,170 +371,139 @@ const App = () => {
 
   /* GET GLOBAL MAX VALUES */
   // Get total users
-  const [totalUsers] = useAction(() => null, async () => await getTotalUsers(""));
+  let [totalUsers] = useAction(() => null, async () => await getTotalUsers(""));
   let numUsers = 0;
+  let userName1 = "", userName2 = "";
   for (var i = 0; i < totalUsers.length; i++) {
     if (totalUsers[i].accountType == "atlassian") { numUsers += 1; }
+    if (totalUsers[i].accountId == config.user1) { userName1 = totalUsers[i].displayName; }
+    if (totalUsers[i].accountId == config.user2) { userName2 = totalUsers[i].displayName; }
   }
 
-  // Get total groups
-  let [numGroups] = useAction(() => null, async () => await getTotalGroups());
-
-  // Get total number of issues per priority
-  let [numLowest] = useAction(() => null, async () => await getTotalPriority("Lowest"));
-  let [numLow] = useAction(() => null, async () => await getTotalPriority("Low"));
-  let [numMedium] = useAction(() => null, async () => await getTotalPriority("Medium"));
-  let [numHigh] = useAction(() => null, async () => await getTotalPriority("High"));
-  let [numHighest] = useAction(() => null, async () => await getTotalPriority("Highest"));
+  // Get all recently closed issues
+  let numRecent = 0, userRecent1 = 0, userRecent2 = 0;
+  const allTotalIssues = useAction(() => null, async () => await getTotalRecentClosed());
+  // console.log(allTotalIssues[0].issues[0].fields);
+  for (var i = 0; i < allTotalIssues[0].issues.length; i++) {
+    numRecent += 1;
+    let assignee = allTotalIssues[0].issues[i].fields.assignee;
+    if (assignee != null) {
+      if (assignee.accountId == config.user1) { userRecent1 += 1; }
+      else if (assignee.accountId == config.user2) { userRecent2 += 1; }
+    }
+  }
 
   // Get total comments, plus number of comments per user
-  let numComments = 0;
-  let userComments1 = 0;
-  let userComments2 = 0;
+  let numComments = 0, userComments1 = 0, userComments2 = 0;
   let numWatches = 0;
+  let numClosed = 0, userClosed1 = 0, userClosed2 = 0;
+  let numOnTime = 0, userOnTime1 = 0, userOnTime2 = 0;
+  let numLowest = 0, numLow = 0, numMedium = 0, numHigh = 0, numHighest = 0;
+  let userLowest1 = 0, userLow1 = 0, userMedium1 = 0, userHigh1 = 0, userHighest1 = 0;
+  let userLowest2 = 0, userLow2 = 0, userMedium2 = 0, userHigh2 = 0, userHighest2 = 0;
   const allIssues = useAction(() => null, async () => await getTotalIssues());
+
   // Iterate through all issues and then through all comments on each issue
   for (var i = 0; i < allIssues[0].issues.length; i++) {
-    numComments += allIssues[0].issues[i].fields.comment.comments.length;
-    for (var j = 0; j < allIssues[0].issues[i].fields.comment.comments.length; j++) {
-      // Check the author of each comment
-      if (allIssues[0].issues[i].fields.comment.comments[j].author.accountId == config.user1) {
+    let fields = allIssues[0].issues[i].fields;
+    let priority = fields.priority.name;
+    let assignee = fields.assignee;
+    let comments = fields.comment.comments;
+    let status = fields.status.name;
+    let duedate = fields.duedate;
+    let resolutiondate = fields.resolutiondate;
+    // console.log(status.name);
+
+    // Get total number of comments and per-user comment data
+    numComments += comments.length;
+    for (var j = 0; j < comments.length; j++) {
+      if (comments[j].author.accountId == config.user1) {
         userComments1 += 1;
-      } else if (allIssues[0].issues[i].fields.comment.comments[j].author.accountId == config.user2) {
+      } else if (comments[j].author.accountId == config.user2) {
         userComments2 += 1;
       }
     }
-    // Also get number of watches on the way
-    numWatches += allIssues[0].issues[i].fields.watches.watchCount;
-  }
 
-  // Get total number of closed issues and recently closed issues
-  let [numClosed] = useAction(() => null, async () => await getTotalClosed());
-  let [numRecentClosed] = useAction(() => null, async () => await getTotalRecentClosed());
-  // Get total number of on-time issues
-  let numOnTime = 0;
-  for (var i = 0; i < numClosed.issues.length; i++) {
-    if (numClosed.issues[i].fields.duedate != null && numClosed.issues[i].fields.duedate >= numClosed.issues[i].fields.resolutiondate) {
-      numOnTime += 1;
+    // Also get total number of watches on the way
+    numWatches += fields.watches.watchCount;
+
+    // And number of issues in each priority level
+    if (priority == "Lowest") { numLowest += 1; }
+    else if (priority == "Low") { numLow += 1; }
+    else if (priority == "Medium") { numMedium += 1; }
+    else if (priority == "High") { numHigh += 1; }
+    else if (priority == "Highest") { numHighest += 1; }
+
+    // Get per-user priority data
+    if (assignee != null) {
+      if (priority == "Lowest" && assignee.accountId == config.user1) { userLowest1 += 1; }
+      else if (priority == "Low" && assignee.accountId == config.user1) { userLow1 += 1; }
+      else if (priority == "Medium" && assignee.accountId == config.user1) { userMedium1 += 1; }
+      else if (priority == "High" && assignee.accountId == config.user1) { userHigh1 += 1; }
+      else if (priority == "Highest" && assignee.accountId == config.user1) { userHighest1 += 1; }
+
+      if (priority == "Lowest" && assignee.accountId == config.user2) { userLowest2 += 1; }
+      else if (priority == "Low" && assignee.accountId == config.user2) { userLow2 += 1; }
+      else if (priority == "Medium" && assignee.accountId == config.user2) { userMedium2 += 1; }
+      else if (priority == "High" && assignee.accountId == config.user2) { userHigh2 += 1; }
+      else if (priority == "Highest" && assignee.accountId == config.user2) { userHighest2 += 1; }
+    }
+
+    // Get number of closed and on-time issues
+    if (status == "Done" || status == "Closed" || status == "Resolved") {
+      numClosed += 1;
+      if (assignee != null) {
+        if (assignee.accountId == config.user1) { userClosed1 += 1; }
+        else if (assignee.accountId == config.user2) { userClosed2 += 1; }
+      }
+      // resolutiondate != null && duedate >= resolutiondate
+      if (duedate >= resolutiondate) {
+        numOnTime += 1;
+        if (assignee != null) {
+          if (assignee.accountId == config.user1) { userOnTime1 += 1; }
+          else if (assignee.accountId == config.user2) { userOnTime2 += 1; }
+        }
+      }
     }
   }
 
-  /* CALCULATE AVERAGE VALUES */
-  const avgComments = `(COMMUNICATION) Average number of comments: ${numComments / numUsers}`;
-  const avgWatches = `(INVOLVEMENT) Average number of watches: ${numWatches / numUsers}`
-  const avgOnTime = `(MEETING DEADLINES) Average number of on-time issues: ${numOnTime / numClosed.issues.length}`;
-  const avgPriority = `(TECHNICAL EXPERTISE) Average priority: ${(numLowest.issues.length + 2*numLow.issues.length + 3*numMedium.issues.length + 4*numHigh.issues.length + 5*numHighest.issues.length) / numUsers}`;
-  const avgRecentClosed = `(PRODUCTIVITY) Average number of recently closed issues: ${numRecentClosed.issues.length / numUsers}`;
+  // Transform to text
+  const avgComments = `Average comments: ${numComments / numUsers}`;
+  numComments = `Total comments: ${numComments}`;
+  userComments1 = `Number of comments: ${userComments1}`;
+  userComments2 = `Number of comments: ${userComments2}`;
 
-  // Transform values to text
-  numUsers = `Total number of users: ${numUsers}`;
-  numGroups = `Total number of groups: ${numGroups.groups.total}`;
-  numComments = `Total number of comments: ${numComments}`;
-  userComments1 = `(COMMUNICATION) Number of comments: ${userComments1}`;
-  userComments2 = `(COMMUNICATION) Number of comments: ${userComments2}`;
-  numLowest = `Total number of lowest priority issues: ${numLowest.issues.length}`;
-  numLow = `Total number of low priority issues: ${numLow.issues.length}`;
-  numMedium = `Total number of medium priority issues: ${numMedium.issues.length}`;
-  numHigh = `Total number of high priority issues: ${numHigh.issues.length}`;
-  numHighest = `Total number of highest priority issues: ${numHighest.issues.length}`;
-  numClosed = `Total number of closed issues: ${numClosed.issues.length}`;
-  numOnTime = `Total number of on-time issues: ${numOnTime}`;
-  numWatches = `Total number of watches: ${numWatches}`;
-  numRecentClosed = `Total number of issues closed in past week: ${numRecentClosed.issues.length}`;
-
-
-  /* GET FIRST USER'S INFO */
-  let [userName1] = useAction(() => null, async () => await getDisplayName(config.user1));
-  let [userAssignedIssues1] = useAction(() => null, async () => await getAssignedIssues(config.user1));
-  let [userReportedIssues1] = useAction(() => null, async () => await getReportedIssues(config.user1));
-  let [userRecentClosedIssues1] = useAction(() => null, async () => await getRecentClosedIssues(config.user1));
+  const avgWatches = `Average watches: ${numWatches / numUsers}`;
+  numWatches = `Total watches: ${numWatches}`;
   let [userWatchedIssues1] = useAction(() => null, async () => await getWatchedIssues(config.user1));
-  let [userCreatedIssues1] = useAction(() => null, async () => await getCreatedIssues(config.user1));
-  let [userOverdueIssues1] = useAction(() => null, async () => await getOpenOverdueIssues(config.user1));
-  let [userClosedIssues1] = useAction(() => null, async () => await getClosedIssues(config.user1));
-  let [userLowestIssues1] = useAction(() => null, async () => await getPriorityIssues(config.user1, "Lowest"));
-  let [userLowIssues1] = useAction(() => null, async () => await getPriorityIssues(config.user1, "Low"));
-  let [userMediumIssues1] = useAction(() => null, async () => await getPriorityIssues(config.user1, "Medium"));
-  let [userHighIssues1] = useAction(() => null, async () => await getPriorityIssues(config.user1, "High"));
-  let [userHighestIssues1] = useAction(() => null, async () => await getPriorityIssues(config.user1, "Highest"));
-  let userWorkRatio1 = [];
-  let userClosedOverdueIssues1 = 0;   // JQL does not allow date comparison, so workaround
-  let userOnTimeIssues1 = 0;
-  for (var i = 0; i < userAssignedIssues1.issues.length; i++) {
-    userWorkRatio1.push(userAssignedIssues1.issues[i].fields.workratio);
-    // won't double count with getOpenOverdueIssues because that func only looks at non-closed issues; here we only look at resolved issues
-    if (userAssignedIssues1.issues[i].fields.duedate < userAssignedIssues1.issues[i].fields.resolutiondate) {
-      userClosedOverdueIssues1 += 1;
-    }
-    // get number of issues completed on time
-    if (userAssignedIssues1.issues[i].fields.resolutiondate != null && userAssignedIssues1.issues[i].fields.duedate >= userAssignedIssues1.issues[i].fields.resolutiondate) {
-      userOnTimeIssues1 += 1;
-    }
-  }
-  const userDeadlines1 = `(MEETING DEADLINES) ${userOnTimeIssues1/userClosedIssues1.issues.length}`;
-  const userGroupsText1 = `Number of groups user is in: ${userName1.groups.size}`;
-  userName1 = `User 1: ${userName1.displayName}`;
-  userAssignedIssues1 = `Number of assigned issues: ${userAssignedIssues1.issues.length}`;
-  userReportedIssues1 = `Number of reported issues: ${userReportedIssues1.issues.length}`;
-  userRecentClosedIssues1 = `(PRODUCTIVITY) Number of assigned issues closed in the past week: ${userRecentClosedIssues1.issues.length}`;
-  userWorkRatio1 = `Work ratios: ${userWorkRatio1}`;
-  const userPriority1 = `(TECHNICAL EXPERTISE) ${userLowestIssues1.issues.length + 2*userLowIssues1.issues.length + 3*userMediumIssues1.issues.length + 4*userHighIssues1.issues.length + 5*userHighestIssues1.issues.length}`;
-  userLowestIssues1 = `Number of Lowest Priority issues: ${userLowestIssues1.issues.length}`;
-  userLowIssues1 = `Number of Low Priority issues: ${userLowIssues1.issues.length}`;
-  userMediumIssues1 = `Number of Medium Priority issues: ${userMediumIssues1.issues.length}`;
-  userHighIssues1 = `Number of High Priority issues: ${userHighIssues1.issues.length}`;
-  userHighestIssues1 = `Number of Highest Priority issues: ${userHighestIssues1.issues.length}`;
-  userWatchedIssues1 = `(INVOLVEMENT) Number of watched issues: ${userWatchedIssues1.issues.length}`;
-  userCreatedIssues1 = `Number of created issues: ${userCreatedIssues1.issues.length}`;
-  userOverdueIssues1 = `Number of overdue issues: ${userOverdueIssues1.issues.length + userClosedOverdueIssues1}`;
-  userOnTimeIssues1 = `Number of issues completed on time: ${userOnTimeIssues1}`;
-  userClosedIssues1 = `Number of closed issues: ${userClosedIssues1.issues.length}`;
-
-
-  /* GET SECOND USER'S INFO */
-  let [userName2] = useAction(() => null, async () => await getDisplayName(config.user2));
-  let [userAssignedIssues2] = useAction(() => null, async () => await getAssignedIssues(config.user2));
-  let [userReportedIssues2] = useAction(() => null, async () => await getReportedIssues(config.user2));
-  let [userRecentClosedIssues2] = useAction(() => null, async () => await getRecentClosedIssues(config.user2));
   let [userWatchedIssues2] = useAction(() => null, async () => await getWatchedIssues(config.user2));
-  let [userCreatedIssues2] = useAction(() => null, async () => await getCreatedIssues(config.user2));
-  let [userOverdueIssues2] = useAction(() => null, async () => await getOpenOverdueIssues(config.user2));
-  let [userClosedIssues2] = useAction(() => null, async () => await getClosedIssues(config.user2));
-  let [userLowestIssues2] = useAction(() => null, async () => await getPriorityIssues(config.user2, "Lowest"));
-  let [userLowIssues2] = useAction(() => null, async () => await getPriorityIssues(config.user2, "Low"));
-  let [userMediumIssues2] = useAction(() => null, async () => await getPriorityIssues(config.user2, "Medium"));
-  let [userHighIssues2] = useAction(() => null, async () => await getPriorityIssues(config.user2, "High"));
-  let [userHighestIssues2] = useAction(() => null, async () => await getPriorityIssues(config.user2, "Highest"));
-  let userWorkRatio2 = [];
-  let userClosedOverdueIssues2 = 0;
-  let userOnTimeIssues2 = 0;
-  for (var i = 0; i < userAssignedIssues2.issues.length; i++) {
-    userWorkRatio2.push(userAssignedIssues2.issues[i].fields.workratio);
-    if (userAssignedIssues2.issues[i].fields.duedate < userAssignedIssues2.issues[i].fields.resolutiondate) {
-      userClosedOverdueIssues2 += 1;
-    }
-    if (userAssignedIssues2.issues[i].fields.resolutiondate != null && userAssignedIssues2.issues[i].fields.duedate >= userAssignedIssues2.issues[i].fields.resolutiondate) {
-      userOnTimeIssues2 += 1;
-    }
-  }
-  const userDeadlines2 = `(MEETING DEADLINES) ${userOnTimeIssues2/userClosedIssues2.issues.length}`;
-  const userGroupsText2 = `Number of groups user is in: ${userName2.groups.size}`;
-  userName2 = `User 2: ${userName2.displayName}`;
-  userAssignedIssues2 = `Number of assigned issues: ${userAssignedIssues2.issues.length}`;
-  userReportedIssues2 = `Number of reported issues: ${userReportedIssues2.issues.length}`;
-  userRecentClosedIssues2 = `(PRODUCTIVITY) Number of assigned issues closed in the past week: ${userRecentClosedIssues2.issues.length}`;
-  userWorkRatio2 = `Work ratios: ${userWorkRatio2}`;
-  const userPriority2 = `(TECHNICAL EXPERTISE) ${userLowestIssues2.issues.length + 2*userLowIssues2.issues.length + 3*userMediumIssues2.issues.length + 4*userHighIssues2.issues.length + 5*userHighestIssues2.issues.length}`;
-  userWatchedIssues2 = `(INVOLVEMENT) Number of watched issues: ${userWatchedIssues2.issues.length}`;
-  userLowestIssues2 = `Number of Lowest Priority issues: ${userLowestIssues2.issues.length}`;
-  userLowIssues2 = `Number of Low Priority issues: ${userLowIssues2.issues.length}`;
-  userMediumIssues2 = `Number of Medium Priority issues: ${userMediumIssues2.issues.length}`;
-  userHighIssues2 = `Number of High Priority issues: ${userHighIssues2.issues.length}`;
-  userHighestIssues2 = `Number of Highest Priority issues: ${userHighestIssues2.issues.length}`;
-  userCreatedIssues2 = `Number of created issues: ${userCreatedIssues2.issues.length}`;
-  userOverdueIssues2 = `Number of overdue issues: ${userOverdueIssues2.issues.length + userClosedOverdueIssues2}`;
-  userOnTimeIssues2 = `Number of issues completed on time: ${userOnTimeIssues2}`;
-  userClosedIssues2 = `Number of closed issues: ${userClosedIssues2.issues.length}`;
+  userWatchedIssues1 = `Num watches: ${userWatchedIssues1.issues.length}`;
+  userWatchedIssues2 = `Num watches: ${userWatchedIssues2.issues.length}`;
+
+  const avgPriority = `Average Priority: ${(numLowest + 2*numLow + 3*numMedium + 4*numHigh + 5*numHighest) / numUsers}`;
+  const totalPriority = `Total Priority: ${numLowest}, ${numLow}, ${numMedium}, ${numHigh}, ${numHighest}`;
+  const userPriority1 = `Priority: [${userLowest1}, ${userLow1}, ${userMedium1}, ${userHigh1}, ${userHighest1}]: ${userLowest1 + 2*userLow1 + 3*userMedium1 + 4*userHigh1 + 5*userHighest1}`;
+  const userPriority2 = `Priority: [${userLowest2}, ${userLow2}, ${userMedium2}, ${userHigh2}, ${userHighest2}]: ${userLowest2 + 2*userLow2 + 3*userMedium2 + 4*userHigh2 + 5*userHighest2}`;
+
+  const avgDeadlines = `Average Deadlines: ${numOnTime / numClosed}`;
+  const userDeadlines1 = `Met Deadlines: ${userOnTime1 / userClosed1}`;
+  const userDeadlines2 = `Met Deadlines: ${userOnTime2 / userClosed2}`;
+  numClosed = `Total closed issues: ${numClosed}`;
+  userClosed1 = `Number of closed issues: ${userClosed1}`;
+  userClosed2 = `Number of closed issues: ${userClosed2}`;
+  numOnTime = `Total on-time issues: ${numOnTime}`;
+  userOnTime1 = `Number of on-time issues: ${userOnTime1}`;
+  userOnTime2 = `Number of on-time issues: ${userOnTime2}`;
+
+  const avgProductivity = `Average Productivity: ${numRecent / numUsers}`;
+  numRecent = `Total Recent: ${numRecent}`;
+  userRecent1 = `Recent: ${userRecent1}`;
+  userRecent2 = `Recent: ${userRecent2}`;
+
+  numUsers = `Total users: ${numUsers}`;
+  userName1 = `User 1: ${userName1}`;
+  userName2 = `User 2: ${userName2}`;
+
 
   /* ------------------------- DRAW RADAR CHART ------------------------- */
   const radius = 250;
@@ -685,66 +639,37 @@ const App = () => {
   // Use the configuration values
   return (
     <Fragment>
-      <Text>Total Values:</Text>
       <Text content={numUsers} />
-      <Text content={numGroups} />
-      <Text content={numLowest} />
-      <Text content={numLow} />
-      <Text content={numMedium} />
-      <Text content={numHigh} />
-      <Text content={numHighest} />
       <Text content={numComments} />
-      <Text content={numClosed} />
       <Text content={numWatches} />
+      <Text content={totalPriority} />
+      <Text content={numClosed} />
       <Text content={numOnTime} />
-      <Text content={numRecentClosed} />
+      <Text content={numRecent} />
 
-      <Text>Average Values:</Text>
       <Text content={avgComments} />
       <Text content={avgWatches} />
-      <Text content={avgOnTime} />
       <Text content={avgPriority} />
-      <Text content={avgRecentClosed} />
+      <Text content={avgDeadlines} />
+      <Text content={avgProductivity} />
 
       <Text content={userName1} />
-      <Text content={userAssignedIssues1} />
-      <Text content={userReportedIssues1} />
-      <Text content={userGroupsText1} />
-      <Text content={userRecentClosedIssues1} />
-      <Text content={userWorkRatio1} />
-      <Text content={userLowestIssues1} />
-      <Text content={userLowIssues1} />
-      <Text content={userMediumIssues1} />
-      <Text content={userHighIssues1} />
-      <Text content={userHighestIssues1} />
-      <Text content={userPriority1} />
-      <Text content={userWatchedIssues1} />
-      <Text content={userCreatedIssues1} />
-      <Text content={userOverdueIssues1} />
-      <Text content={userOnTimeIssues1} />
       <Text content={userComments1} />
-      <Text content={userClosedIssues1} />
+      <Text content={userWatchedIssues1} />
+      <Text content={userPriority1} />
+      <Text content={userClosed1} />
+      <Text content={userOnTime1} />
       <Text content={userDeadlines1} />
+      <Text content={userRecent1} />
 
       <Text content={userName2} />
-      <Text content={userAssignedIssues2} />
-      <Text content={userReportedIssues2} />
-      <Text content={userGroupsText2} />
-      <Text content={userRecentClosedIssues2} />
-      <Text content={userWorkRatio2} />
-      <Text content={userLowestIssues2} />
-      <Text content={userLowIssues2} />
-      <Text content={userMediumIssues2} />
-      <Text content={userHighIssues2} />
-      <Text content={userHighestIssues2} />
-      <Text content={userPriority2} />
-      <Text content={userWatchedIssues2} />
-      <Text content={userCreatedIssues2} />
-      <Text content={userOverdueIssues2} />
-      <Text content={userOnTimeIssues2} />
       <Text content={userComments2} />
-      <Text content={userClosedIssues2} />
+      <Text content={userWatchedIssues2} />
+      <Text content={userPriority2} />
+      <Text content={userClosed2} />
+      <Text content={userOnTime2} />
       <Text content={userDeadlines2} />
+      <Text content={userRecent2} />
 
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
