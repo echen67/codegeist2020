@@ -17,132 +17,8 @@ import ForgeUI, {
 } from "@forge/ui";
 import api from "@forge/api";
 
+
 /* GET USER-SPECIFIC DATA */
-// Get number of issues assigned to user
-const getAssignedIssues = async (userID) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "assignee = ${userID} ORDER BY createdDate ASC",
-      "fields": [
-        "*all"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getAssignedIssues`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-// Get number of issues assigned to user that have been closed/done in the past week
-const getRecentClosedIssues = async (userID) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "assignee = ${userID} AND (status = Done AND status changed to done after -1w) OR (status = Closed AND status changed to closed after -1w) OR (status = Resolved AND status changed to Resolved after -1w)",
-      "fields": [
-        "summary"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getClosedIssues`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-// Get number of issues assigned to user that are closed
-const getClosedIssues = async (userID) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "assignee = ${userID} AND (status = Closed OR status = Done OR status = Resolved)",
-      "fields": [
-        "summary"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getClosedIssues`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-// Get number of overdue issues that are still open/in progress
-const getOpenOverdueIssues = async (userID) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "assignee = ${userID} AND (status != Done AND status != Closed AND status != Resolved AND duedate < now())",
-      "fields": [
-        "summary"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getOpenOverdueIssues`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-// Get number of issues reported by user
-const getReportedIssues = async (userID) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "reporter = ${userID}",
-      "fields": [
-        "comment"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getReportedIssues`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
 // Get number of issues user is watching
 const getWatchedIssues = async (userID) => {
   const response = await api.asApp().requestJira('/rest/api/3/search', {
@@ -168,75 +44,6 @@ const getWatchedIssues = async (userID) => {
   return await response.json();
 };
 
-// Get number of issues created by user
-const getCreatedIssues = async (userID) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "creator = ${userID}",
-      "fields": [
-        "summary"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getCreatedIssues`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-// Get number of issues in priority by user
-const getPriorityIssues = async(userID, priority) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "assignee = ${userID} AND priority = ${priority}",
-      "fields": [
-        "summary"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getPriorityIssues`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-// Get user's display name from Jira API
-const getDisplayName = async (userID) => {
-  const response = await api.asApp().requestJira(`/rest/api/3/user?accountId=${userID}`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json'
-    }
-  });
-
-  if (!response.ok) {
-      const err = `Error while getDisplayName`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-
 /* GET GLOBAL MAX VALUES */
 // Get total number of users -- query doesn't work for some reason?
 const getTotalUsers = async (query) => {
@@ -250,31 +57,6 @@ const getTotalUsers = async (query) => {
 
   if (!response.ok) {
       const err = `Error while getTotalUsers`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
-// Get total number of issues with [PRIORITY LEVEL] (lowest, low, medium, high, highest)
-const getTotalPriority = async (priority) => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "priority = ${priority}",
-      "fields": [
-        "summary"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getTotalPriority`;
       console.error(err);
       throw new Error(err);
   }
@@ -313,32 +95,6 @@ const getTotalIssues = async () => {
   return await response.json();
 };
 
-// Get total number of closed issues
-const getTotalClosed = async () => {
-  const response = await api.asApp().requestJira('/rest/api/3/search', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      "Content-Type": "application/json"
-    },
-    body: `{
-      "jql": "status = Done OR status = Closed OR status = Resolved",
-      "fields": [
-        "duedate",
-        "resolutiondate"
-      ]
-    }`
-  });
-
-  if (!response.ok) {
-      const err = `Error while getTotalClosed`;
-      console.error(err);
-      throw new Error(err);
-  }
-
-  return await response.json();
-};
-
 // Get total number of issues closed in past week
 const getTotalRecentClosed = async() => {
   const response = await api.asApp().requestJira('/rest/api/3/search', {
@@ -364,6 +120,7 @@ const getTotalRecentClosed = async() => {
   return await response.json();
 };
 
+
 /* ------------------------- APP ------------------------- */
 const App = () => {
   // Retrieve the configuration
@@ -382,11 +139,10 @@ const App = () => {
 
   // Get all recently closed issues
   let numRecent = 0, userRecent1 = 0, userRecent2 = 0;
-  const allTotalIssues = useAction(() => null, async () => await getTotalRecentClosed());
-  // console.log(allTotalIssues[0].issues[0].fields);
-  for (var i = 0; i < allTotalIssues[0].issues.length; i++) {
+  const allRecentIssues = useAction(() => null, async () => await getTotalRecentClosed());
+  for (var i = 0; i < allRecentIssues[0].issues.length; i++) {
     numRecent += 1;
-    let assignee = allTotalIssues[0].issues[i].fields.assignee;
+    let assignee = allRecentIssues[0].issues[i].fields.assignee;
     if (assignee != null) {
       if (assignee.accountId == config.user1) { userRecent1 += 1; }
       else if (assignee.accountId == config.user2) { userRecent2 += 1; }
@@ -412,7 +168,6 @@ const App = () => {
     let status = fields.status.name;
     let duedate = fields.duedate;
     let resolutiondate = fields.resolutiondate;
-    // console.log(status.name);
 
     // Get total number of comments and per-user comment data
     numComments += comments.length;
@@ -457,7 +212,7 @@ const App = () => {
         else if (assignee.accountId == config.user2) { userClosed2 += 1; }
       }
       // resolutiondate != null && duedate >= resolutiondate
-      if (duedate >= resolutiondate) {
+      if (duedate == null || duedate >= resolutiondate) {
         numOnTime += 1;
         if (assignee != null) {
           if (assignee.accountId == config.user1) { userOnTime1 += 1; }
@@ -467,38 +222,57 @@ const App = () => {
     }
   }
 
-  // Transform to text
-  const avgComments = `Average comments: ${numComments / numUsers}`;
-  numComments = `Total comments: ${numComments}`;
-  userComments1 = `Number of comments: ${userComments1}`;
-  userComments2 = `Number of comments: ${userComments2}`;
-
-  const avgWatches = `Average watches: ${numWatches / numUsers}`;
-  numWatches = `Total watches: ${numWatches}`;
+  // Transform to chart data
   let [userWatchedIssues1] = useAction(() => null, async () => await getWatchedIssues(config.user1));
   let [userWatchedIssues2] = useAction(() => null, async () => await getWatchedIssues(config.user2));
-  userWatchedIssues1 = `Num watches: ${userWatchedIssues1.issues.length}`;
-  userWatchedIssues2 = `Num watches: ${userWatchedIssues2.issues.length}`;
+  const userP1 = userLowest1 + 2*userLow1 + 3*userMedium1 + 4*userHigh1 + 5*userHighest1;
+  const userP2 = userLowest2 + 2*userLow2 + 3*userMedium2 + 4*userHigh2 + 5*userHighest2;
+  const avgPriority = (numLowest + 2*numLow + 3*numMedium + 4*numHigh + 5*numHighest) / numUsers;
 
-  const avgPriority = `Average Priority: ${(numLowest + 2*numLow + 3*numMedium + 4*numHigh + 5*numHighest) / numUsers}`;
-  const totalPriority = `Total Priority: ${numLowest}, ${numLow}, ${numMedium}, ${numHigh}, ${numHighest}`;
-  const userPriority1 = `Priority: [${userLowest1}, ${userLow1}, ${userMedium1}, ${userHigh1}, ${userHighest1}]: ${userLowest1 + 2*userLow1 + 3*userMedium1 + 4*userHigh1 + 5*userHighest1}`;
-  const userPriority2 = `Priority: [${userLowest2}, ${userLow2}, ${userMedium2}, ${userHigh2}, ${userHighest2}]: ${userLowest2 + 2*userLow2 + 3*userMedium2 + 4*userHigh2 + 5*userHighest2}`;
+  let communicationUser1 = userComments1 / (numComments / numUsers);
+  let involvementUser1 = userWatchedIssues1.issues.length / (numWatches / numUsers);
+  let technicalUser1 = userP1 / avgPriority;
+  let deadlinesUser1 = (userOnTime1 / userClosed1) / (numOnTime / numClosed);
+  let productivityUser1 = userRecent1 / (numRecent / numUsers);
+  const max1 = Math.max(communicationUser1, involvementUser1, technicalUser1, deadlinesUser1, productivityUser1);
+  communicationUser1 /= max1;
+  involvementUser1 /= max1;
+  technicalUser1 /= max1;
+  deadlinesUser1 /= max1;
+  productivityUser1 /= max1;
 
-  const avgDeadlines = `Average Deadlines: ${numOnTime / numClosed}`;
-  const userDeadlines1 = `Met Deadlines: ${userOnTime1 / userClosed1}`;
-  const userDeadlines2 = `Met Deadlines: ${userOnTime2 / userClosed2}`;
-  numClosed = `Total closed issues: ${numClosed}`;
-  userClosed1 = `Number of closed issues: ${userClosed1}`;
-  userClosed2 = `Number of closed issues: ${userClosed2}`;
-  numOnTime = `Total on-time issues: ${numOnTime}`;
-  userOnTime1 = `Number of on-time issues: ${userOnTime1}`;
-  userOnTime2 = `Number of on-time issues: ${userOnTime2}`;
+  let communicationUser2 = userComments2 / (numComments / numUsers);
+  let involvementUser2 = userWatchedIssues2.issues.length / (numWatches / numUsers);
+  let technicalUser2 = userP2 / avgPriority;
+  let deadlinesUser2 = (userOnTime2 / userClosed2) / (numOnTime / numClosed);
+  let productivityUser2 = userRecent2 / (numRecent / numUsers);
+  const max2 = Math.max(communicationUser2, involvementUser2, technicalUser2, deadlinesUser2, productivityUser2);
+  communicationUser2 /= max2;
+  involvementUser2 /= max2;
+  technicalUser2 /= max2;
+  deadlinesUser2 /= max2;
+  productivityUser2 /= max2;
 
-  const avgProductivity = `Average Productivity: ${numRecent / numUsers}`;
-  numRecent = `Total Recent: ${numRecent}`;
-  userRecent1 = `Recent: ${userRecent1}`;
-  userRecent2 = `Recent: ${userRecent2}`;
+  // Transform to text (remove in final version)
+  userComments1 = `Comments: ${userComments1}, Communication: ${userComments1 / (numComments / numUsers)}`;
+  userComments2 = `Comments: ${userComments2}, Communication: ${userComments2 / (numComments / numUsers)}`;
+  numComments = `Total comments: ${numComments}, Average comments: ${numComments / numUsers}`;
+
+  userWatchedIssues1 = `Watches: ${userWatchedIssues1.issues.length}, Involvement: ${userWatchedIssues1.issues.length / (numWatches / numUsers)}`;
+  userWatchedIssues2 = `Watches: ${userWatchedIssues2.issues.length}, Involvement: ${userWatchedIssues2.issues.length / (numWatches / numUsers)}`;
+  numWatches = `Total watches: ${numWatches}, Average watches: ${numWatches / numUsers}`;
+
+  const userPriority1 = `Priority: [${userLowest1}, ${userLow1}, ${userMedium1}, ${userHigh1}, ${userHighest1}]: ${userP1}, Technical: ${userP1 / avgPriority}`;
+  const userPriority2 = `Priority: [${userLowest2}, ${userLow2}, ${userMedium2}, ${userHigh2}, ${userHighest2}]: ${userP2}, Technical: ${userP2 / avgPriority}`;
+  const totalPriority = `Total Priority: ${numLowest}, ${numLow}, ${numMedium}, ${numHigh}, ${numHighest}, Average Priority: ${avgPriority}`;
+
+  userClosed1 = `Closed issues: ${userClosed1}, On-time issues: ${userOnTime1}, Met Deadlines: ${userOnTime1 / userClosed1}, Deadlines: ${(userOnTime1 / userClosed1) / (numOnTime / numClosed)}`;
+  userClosed2 = `Closed issues: ${userClosed2}, On-time issues: ${userOnTime2}, Met Deadlines: ${userOnTime2 / userClosed2}, Deadlines: ${(userOnTime2 / userClosed2) / (numOnTime / numClosed)}`;
+  numClosed = `Total closed issues: ${numClosed}, Total on-time issues: ${numOnTime}, Average On-Time: ${numOnTime / numClosed}`;
+
+  userRecent1 = `Recently Closed: ${userRecent1}, Productivity: ${userRecent1 / (numRecent / numUsers)}`;
+  userRecent2 = `Recently Closed: ${userRecent2}, Productivity: ${userRecent2 / (numRecent / numUsers)}`;
+  numRecent = `Total Recent: ${numRecent}, Average Recent: ${numRecent / numUsers}`;
 
   numUsers = `Total users: ${numUsers}`;
   userName1 = `User 1: ${userName1}`;
@@ -594,40 +368,40 @@ const App = () => {
   };
 
   // convert skill ratings to chart points
-  const communication = polarCartesian(config.communication, 18);
-  const technical = polarCartesian(config.technical, 90);
-  const leadership = polarCartesian(config.leadership, 162);
-  const teamwork = polarCartesian(config.teamwork, 234);
-  const deadlines = polarCartesian(config.deadlines, 306);
+  const communication1 = polarCartesian(communicationUser1, 18);
+  const involvement1 = polarCartesian(involvementUser1, 90);
+  const technical1 = polarCartesian(technicalUser1, 162);
+  const deadlines1 = polarCartesian(deadlinesUser1, 234);
+  const productivity1 = polarCartesian(productivityUser1, 306);
 
   // Polygon showing users skills for each dimension
   // Angles: 18, 90, 162, 234, 306
   const poly =
     `<polygon
-      points="${communication.x},${communication.y} ${technical.x},${technical.y} ${leadership.x},${leadership.y} ${teamwork.x},${teamwork.y} ${deadlines.x},${deadlines.y}"
+      points="${communication1.x},${communication1.y} ${involvement1.x},${involvement1.y} ${technical1.x},${technical1.y} ${deadlines1.x},${deadlines1.y} ${productivity1.x},${productivity1.y}"
       style="fill:#5D1D1D;stroke:#5D1D1D;stroke-width:1;opacity:0.3;"
     />`;
 
   // Second user's polygon
-  const communication2 = polarCartesian(config.communication2, 18);
-  const technical2 = polarCartesian(config.technical2, 90);
-  const leadership2 = polarCartesian(config.leadership2, 162);
-  const teamwork2 = polarCartesian(config.teamwork2, 234);
-  const deadlines2 = polarCartesian(config.deadlines2, 306);
+  const communication2 = polarCartesian(communicationUser2, 18);
+  const involvement2 = polarCartesian(involvementUser2, 90);
+  const technical2 = polarCartesian(technicalUser2, 162);
+  const deadlines2 = polarCartesian(deadlinesUser2, 234);
+  const productivity2 = polarCartesian(productivityUser2, 306);
 
   const poly2 =
     `<polygon
-      points="${communication2.x},${communication2.y} ${technical2.x},${technical2.y} ${leadership2.x},${leadership2.y} ${teamwork2.x},${teamwork2.y} ${deadlines2.x},${deadlines2.y}"
+      points="${communication2.x},${communication2.y} ${involvement2.x},${involvement2.y} ${technical2.x},${technical2.y} ${deadlines2.x},${deadlines2.y} ${productivity2.x},${productivity2.y}"
       style="fill:#28305C;stroke:#28305C;stroke-width:1;opacity:0.3;"
     />`;
 
   // Labels for each dimension
   const caption =
     `<text x="495" y="327" fill="#777" >Communication</text>
-    <text x="190" y="520" fill="#777" >Technical Knowledge</text>
-    <text x="0" y="327" fill="#777" >Leadership</text>
-    <text x="70" y="40" fill="#777" >Teamwork</text>
-    <text x="399" y="45" fill="#777" >Meeting Deadlines</text>`;
+    <text x="190" y="520" fill="#777" >Involvement</text>
+    <text x="0" y="327" fill="#777" >Technical</text>
+    <text x="70" y="40" fill="#777" >Meeting Deadlines</text>
+    <text x="399" y="45" fill="#777" >Productivity</text>`;
 
   // Combine all elements for the final svg
   const svg = `<svg xmlns="http://www.w3.org/2000/svg"
@@ -644,22 +418,13 @@ const App = () => {
       <Text content={numWatches} />
       <Text content={totalPriority} />
       <Text content={numClosed} />
-      <Text content={numOnTime} />
       <Text content={numRecent} />
-
-      <Text content={avgComments} />
-      <Text content={avgWatches} />
-      <Text content={avgPriority} />
-      <Text content={avgDeadlines} />
-      <Text content={avgProductivity} />
 
       <Text content={userName1} />
       <Text content={userComments1} />
       <Text content={userWatchedIssues1} />
       <Text content={userPriority1} />
       <Text content={userClosed1} />
-      <Text content={userOnTime1} />
-      <Text content={userDeadlines1} />
       <Text content={userRecent1} />
 
       <Text content={userName2} />
@@ -667,8 +432,6 @@ const App = () => {
       <Text content={userWatchedIssues2} />
       <Text content={userPriority2} />
       <Text content={userClosed2} />
-      <Text content={userOnTime2} />
-      <Text content={userDeadlines2} />
       <Text content={userRecent2} />
 
       <Image
@@ -685,128 +448,7 @@ const Config = () => {
   return (
     <ConfigForm>
       <UserPicker label="User" name="user1" />
-      <Select label="Communication" name="communication">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Technical Knowledge" name="technical">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Leadership" name="leadership">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Teamwork" name="teamwork">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Meeting Deadlines" name="deadlines">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-
       <UserPicker label="User" name="user2" />
-      <Select label="Communication" name="communication2">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Technical Knowledge" name="technical2">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Leadership" name="leadership2">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Teamwork" name="teamwork2">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
-      <Select label="Meeting Deadlines" name="deadlines2">
-        <Option defaultSelected label="1" value="0.1" />
-        <Option label="2" value="0.2" />
-        <Option label="3" value="0.3" />
-        <Option label="4" value="0.4" />
-        <Option label="5" value="0.5" />
-        <Option label="6" value="0.6" />
-        <Option label="7" value="0.7" />
-        <Option label="8" value="0.8" />
-        <Option label="9" value="0.9" />
-        <Option label="10" value="1" />
-      </Select>
     </ConfigForm>
   );
 };
@@ -818,16 +460,6 @@ export const run = render(
     app={<App />}
     config={<Config />}
     defaultConfig={{
-      communication: "0.1",
-      technical: "0.1",
-      leadership: "0.1",
-      teamwork: "0.1",
-      deadlines: "0.1",
-      communication2: "0.1",
-      technical2: "0.1",
-      leadership2: "0.1",
-      teamwork2: "0.1",
-      deadlines2: "0.1"
     }}
   />
 );
