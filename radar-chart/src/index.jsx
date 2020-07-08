@@ -227,52 +227,60 @@ const App = () => {
   let [userWatchedIssues2] = useAction(() => null, async () => await getWatchedIssues(config.user2));
   const userP1 = userLowest1 + 2*userLow1 + 3*userMedium1 + 4*userHigh1 + 5*userHighest1;
   const userP2 = userLowest2 + 2*userLow2 + 3*userMedium2 + 4*userHigh2 + 5*userHighest2;
+  const avgCommunication = numComments / numUsers;
+  const avgInvolvement = numWatches / numUsers;
   const avgPriority = (numLowest + 2*numLow + 3*numMedium + 4*numHigh + 5*numHighest) / numUsers;
+  const avgDeadlines = numOnTime / numClosed;
+  const avgProductivity = numRecent / numUsers;
 
-  let communicationUser1 = userComments1 / (numComments / numUsers);
-  let involvementUser1 = userWatchedIssues1.issues.length / (numWatches / numUsers);
-  let technicalUser1 = userP1 / avgPriority;
-  let deadlinesUser1 = (userOnTime1 / userClosed1) / (numOnTime / numClosed);
-  let productivityUser1 = userRecent1 / (numRecent / numUsers);
+  let communicationUser1 = (avgCommunication != 0) ? (userComments1 / avgCommunication) : 0;
+  let involvementUser1 = (avgInvolvement != 0) ? (userWatchedIssues1.issues.length / avgInvolvement) : 0;
+  let technicalUser1 = (avgPriority != 0) ? (userP1 / avgPriority) : 0;
+  let deadlinesUser1 = (avgDeadlines != 0) ? ((userOnTime1 / userClosed1) / avgDeadlines) : 0;
+  let productivityUser1 = (avgProductivity != 0) ? (userRecent1 / avgProductivity) : 0;
   const max1 = Math.max(communicationUser1, involvementUser1, technicalUser1, deadlinesUser1, productivityUser1);
-  communicationUser1 /= max1;
-  involvementUser1 /= max1;
-  technicalUser1 /= max1;
-  deadlinesUser1 /= max1;
-  productivityUser1 /= max1;
+  if (max1 != 0) {
+    communicationUser1 /= max1;
+    involvementUser1 /= max1;
+    technicalUser1 /= max1;
+    deadlinesUser1 /= max1;
+    productivityUser1 /= max1;
+  }
 
-  let communicationUser2 = userComments2 / (numComments / numUsers);
-  let involvementUser2 = userWatchedIssues2.issues.length / (numWatches / numUsers);
-  let technicalUser2 = userP2 / avgPriority;
-  let deadlinesUser2 = (userOnTime2 / userClosed2) / (numOnTime / numClosed);
-  let productivityUser2 = userRecent2 / (numRecent / numUsers);
+  let communicationUser2 = (avgCommunication != 0) ? (userComments2 / avgCommunication) : 0;
+  let involvementUser2 = (avgInvolvement != 0) ? (userWatchedIssues2.issues.length / avgInvolvement) : 0;
+  let technicalUser2 = (avgPriority != 0) ? (userP2 / avgPriority) : 0;
+  let deadlinesUser2 = (avgDeadlines != 0) ? ((userOnTime2 / userClosed2) / avgDeadlines) : 0;
+  let productivityUser2 = (avgProductivity != 0) ? (userRecent2 / avgProductivity) : 0;
   const max2 = Math.max(communicationUser2, involvementUser2, technicalUser2, deadlinesUser2, productivityUser2);
-  communicationUser2 /= max2;
-  involvementUser2 /= max2;
-  technicalUser2 /= max2;
-  deadlinesUser2 /= max2;
-  productivityUser2 /= max2;
+  if (max2 != 0) {
+    communicationUser2 /= max2;
+    involvementUser2 /= max2;
+    technicalUser2 /= max2;
+    deadlinesUser2 /= max2;
+    productivityUser2 /= max2;
+  }
 
   // Transform to text (remove in final version)
-  userComments1 = `Comments: ${userComments1}, Communication: ${userComments1 / (numComments / numUsers)}`;
-  userComments2 = `Comments: ${userComments2}, Communication: ${userComments2 / (numComments / numUsers)}`;
-  numComments = `Total comments: ${numComments}, Average comments: ${numComments / numUsers}`;
+  userComments1 = `Comments: ${userComments1}, Communication: ${userComments1 / avgCommunication}`;
+  userComments2 = `Comments: ${userComments2}, Communication: ${userComments2 / avgCommunication}`;
+  numComments = `Total comments: ${numComments}, Average comments: ${avgCommunication}`;
 
-  userWatchedIssues1 = `Watches: ${userWatchedIssues1.issues.length}, Involvement: ${userWatchedIssues1.issues.length / (numWatches / numUsers)}`;
-  userWatchedIssues2 = `Watches: ${userWatchedIssues2.issues.length}, Involvement: ${userWatchedIssues2.issues.length / (numWatches / numUsers)}`;
-  numWatches = `Total watches: ${numWatches}, Average watches: ${numWatches / numUsers}`;
+  userWatchedIssues1 = `Watches: ${userWatchedIssues1.issues.length}, Involvement: ${userWatchedIssues1.issues.length / avgInvolvement}`;
+  userWatchedIssues2 = `Watches: ${userWatchedIssues2.issues.length}, Involvement: ${userWatchedIssues2.issues.length / avgInvolvement}`;
+  numWatches = `Total watches: ${numWatches}, Average watches: ${avgInvolvement}`;
 
   const userPriority1 = `Priority: [${userLowest1}, ${userLow1}, ${userMedium1}, ${userHigh1}, ${userHighest1}]: ${userP1}, Technical: ${userP1 / avgPriority}`;
   const userPriority2 = `Priority: [${userLowest2}, ${userLow2}, ${userMedium2}, ${userHigh2}, ${userHighest2}]: ${userP2}, Technical: ${userP2 / avgPriority}`;
   const totalPriority = `Total Priority: ${numLowest}, ${numLow}, ${numMedium}, ${numHigh}, ${numHighest}, Average Priority: ${avgPriority}`;
 
-  userClosed1 = `Closed issues: ${userClosed1}, On-time issues: ${userOnTime1}, Met Deadlines: ${userOnTime1 / userClosed1}, Deadlines: ${(userOnTime1 / userClosed1) / (numOnTime / numClosed)}`;
-  userClosed2 = `Closed issues: ${userClosed2}, On-time issues: ${userOnTime2}, Met Deadlines: ${userOnTime2 / userClosed2}, Deadlines: ${(userOnTime2 / userClosed2) / (numOnTime / numClosed)}`;
-  numClosed = `Total closed issues: ${numClosed}, Total on-time issues: ${numOnTime}, Average On-Time: ${numOnTime / numClosed}`;
+  userClosed1 = `Closed issues: ${userClosed1}, On-time issues: ${userOnTime1}, Met Deadlines: ${userOnTime1 / userClosed1}, Deadlines: ${(userOnTime1 / userClosed1) / avgDeadlines}`;
+  userClosed2 = `Closed issues: ${userClosed2}, On-time issues: ${userOnTime2}, Met Deadlines: ${userOnTime2 / userClosed2}, Deadlines: ${(userOnTime2 / userClosed2) / avgDeadlines}`;
+  numClosed = `Total closed issues: ${numClosed}, Total on-time issues: ${numOnTime}, Average On-Time: ${avgDeadlines}`;
 
-  userRecent1 = `Recently Closed: ${userRecent1}, Productivity: ${userRecent1 / (numRecent / numUsers)}`;
-  userRecent2 = `Recently Closed: ${userRecent2}, Productivity: ${userRecent2 / (numRecent / numUsers)}`;
-  numRecent = `Total Recent: ${numRecent}, Average Recent: ${numRecent / numUsers}`;
+  userRecent1 = `Recently Closed: ${userRecent1}, Productivity: ${userRecent1 / avgProductivity}`;
+  userRecent2 = `Recently Closed: ${userRecent2}, Productivity: ${userRecent2 / avgProductivity}`;
+  numRecent = `Total Recent: ${numRecent}, Average Recent: ${avgProductivity}`;
 
   numUsers = `Total users: ${numUsers}`;
   userName1 = `User 1: ${userName1}`;
@@ -398,9 +406,9 @@ const App = () => {
   // Labels for each dimension
   const caption =
     `<text x="495" y="327" fill="#777" >Communication</text>
-    <text x="190" y="520" fill="#777" >Involvement</text>
+    <text x="225" y="520" fill="#777" >Involvement</text>
     <text x="0" y="327" fill="#777" >Technical</text>
-    <text x="70" y="40" fill="#777" >Meeting Deadlines</text>
+    <text x="50" y="30" fill="#777" >Meeting Deadlines</text>
     <text x="399" y="45" fill="#777" >Productivity</text>`;
 
   // Combine all elements for the final svg
