@@ -19,7 +19,11 @@ import api from "@forge/api";
 
 
 /* GET USER-SPECIFIC DATA */
-// Get number of issues user is watching
+/**
+ * Get number of issues user is watching.
+ * @param {String} userID   The account id of the user.
+ * @return {JSON} Return JSON containing all issues user is watching.
+**/
 const getWatchedIssues = async (userID) => {
   const response = await api.asApp().requestJira('/rest/api/3/search', {
     method: 'POST',
@@ -130,15 +134,19 @@ const App = () => {
   // Get total users
   let [totalUsers] = useAction(() => null, async () => await getTotalUsers(""));
   let numUsers = 0;
-  let userName1 = "", userName2 = "";
+  let userName1 = "", userName2 = "", userName3 = "", userName4 = "", userName5 = "";
+  let userNames = ["", "", "", "", ""];
   for (var i = 0; i < totalUsers.length; i++) {
     if (totalUsers[i].accountType == "atlassian") { numUsers += 1; }
     if (totalUsers[i].accountId == config.user1) { userName1 = totalUsers[i].displayName; }
     if (totalUsers[i].accountId == config.user2) { userName2 = totalUsers[i].displayName; }
+    if (totalUsers[i].accountId == config.user3) { userName3 = totalUsers[i].displayName; }
+    if (totalUsers[i].accountId == config.user4) { userName4 = totalUsers[i].displayName; }
+    if (totalUsers[i].accountId == config.user5) { userName5 = totalUsers[i].displayName; }
   }
 
   // Get all recently closed issues
-  let numRecent = 0, userRecent1 = 0, userRecent2 = 0;
+  let numRecent = 0, userRecent1 = 0, userRecent2 = 0, userRecent3 = 0, userRecent4 = 0, userRecent5 = 0;
   const allRecentIssues = useAction(() => null, async () => await getTotalRecentClosed());
   for (var i = 0; i < allRecentIssues[0].issues.length; i++) {
     numRecent += 1;
@@ -146,17 +154,23 @@ const App = () => {
     if (assignee != null) {
       if (assignee.accountId == config.user1) { userRecent1 += 1; }
       else if (assignee.accountId == config.user2) { userRecent2 += 1; }
+      else if (assignee.accountId == config.user3) { userRecent3 += 1; }
+      else if (assignee.accountId == config.user4) { userRecent4 += 1; }
+      else if (assignee.accountId == config.user5) { userRecent5 += 1; }
     }
   }
 
   // Get total comments, plus number of comments per user
-  let numComments = 0, userComments1 = 0, userComments2 = 0;
+  let numComments = 0, userComments1 = 0, userComments2 = 0, userComments3 = 0, userComments4 = 0, userComments5 = 0;
   let numWatches = 0;
-  let numClosed = 0, userClosed1 = 0, userClosed2 = 0;
-  let numOnTime = 0, userOnTime1 = 0, userOnTime2 = 0;
+  let numClosed = 0, userClosed1 = 0, userClosed2 = 0, userClosed3 = 0, userClosed4 = 0, userClosed5 = 0;
+  let numOnTime = 0, userOnTime1 = 0, userOnTime2 = 0, userOnTime3 = 0, userOnTime4 = 0, userOnTime5 = 0;
   let numLowest = 0, numLow = 0, numMedium = 0, numHigh = 0, numHighest = 0;
   let userLowest1 = 0, userLow1 = 0, userMedium1 = 0, userHigh1 = 0, userHighest1 = 0;
   let userLowest2 = 0, userLow2 = 0, userMedium2 = 0, userHigh2 = 0, userHighest2 = 0;
+  let userLowest3 = 0, userLow3 = 0, userMedium3 = 0, userHigh3 = 0, userHighest3 = 0;
+  let userLowest4 = 0, userLow4 = 0, userMedium4 = 0, userHigh4 = 0, userHighest4 = 0;
+  let userLowest5 = 0, userLow5 = 0, userMedium5 = 0, userHigh5 = 0, userHighest5 = 0;
   const allIssues = useAction(() => null, async () => await getTotalIssues());
 
   // Iterate through all issues and then through all comments on each issue
@@ -172,11 +186,11 @@ const App = () => {
     // Get total number of comments and per-user comment data
     numComments += comments.length;
     for (var j = 0; j < comments.length; j++) {
-      if (comments[j].author.accountId == config.user1) {
-        userComments1 += 1;
-      } else if (comments[j].author.accountId == config.user2) {
-        userComments2 += 1;
-      }
+      if (comments[j].author.accountId == config.user1) { userComments1 += 1; }
+      else if (comments[j].author.accountId == config.user2) { userComments2 += 1; }
+      else if (comments[j].author.accountId == config.user3) { userComments3 += 1; }
+      else if (comments[j].author.accountId == config.user4) { userComments4 += 1; }
+      else if (comments[j].author.accountId == config.user5) { userComments5 += 1; }
     }
 
     // Also get total number of watches on the way
@@ -191,17 +205,45 @@ const App = () => {
 
     // Get per-user priority data
     if (assignee != null) {
-      if (priority == "Lowest" && assignee.accountId == config.user1) { userLowest1 += 1; }
-      else if (priority == "Low" && assignee.accountId == config.user1) { userLow1 += 1; }
-      else if (priority == "Medium" && assignee.accountId == config.user1) { userMedium1 += 1; }
-      else if (priority == "High" && assignee.accountId == config.user1) { userHigh1 += 1; }
-      else if (priority == "Highest" && assignee.accountId == config.user1) { userHighest1 += 1; }
+      if (assignee.accountId == config.user1) {
+        if (priority == "Lowest") { userLowest1 += 1; }
+        else if (priority == "Low") { userLow1 += 1; }
+        else if (priority == "Medium") { userMedium1 += 1; }
+        else if (priority == "High") { userHigh1 += 1; }
+        else if (priority == "Highest") { userHighest1 += 1; }
+      }
 
-      if (priority == "Lowest" && assignee.accountId == config.user2) { userLowest2 += 1; }
-      else if (priority == "Low" && assignee.accountId == config.user2) { userLow2 += 1; }
-      else if (priority == "Medium" && assignee.accountId == config.user2) { userMedium2 += 1; }
-      else if (priority == "High" && assignee.accountId == config.user2) { userHigh2 += 1; }
-      else if (priority == "Highest" && assignee.accountId == config.user2) { userHighest2 += 1; }
+      if (assignee.accountId == config.user2) {
+        if (priority == "Lowest") { userLowest2 += 1; }
+        else if (priority == "Low") { userLow2 += 1; }
+        else if (priority == "Medium") { userMedium2 += 1; }
+        else if (priority == "High") { userHigh2 += 1; }
+        else if (priority == "Highest") { userHighest2 += 1; }
+      }
+
+      if (assignee.accountId == config.user3) {
+        if (priority == "Lowest") { userLowest3 += 1; }
+        else if (priority == "Low") { userLow3 += 1; }
+        else if (priority == "Medium") { userMedium3 += 1; }
+        else if (priority == "High") { userHigh3 += 1; }
+        else if (priority == "Highest") { userHighest3 += 1; }
+      }
+
+      if (assignee.accountId == config.user4) {
+        if (priority == "Lowest") { userLowest4 += 1; }
+        else if (priority == "Low") { userLow4 += 1; }
+        else if (priority == "Medium") { userMedium4 += 1; }
+        else if (priority == "High") { userHigh4 += 1; }
+        else if (priority == "Highest") { userHighest4 += 1; }
+      }
+
+      if (assignee.accountId == config.user5) {
+        if (priority == "Lowest") { userLowest5 += 1; }
+        else if (priority == "Low") { userLow5 += 1; }
+        else if (priority == "Medium") { userMedium5 += 1; }
+        else if (priority == "High") { userHigh5 += 1; }
+        else if (priority == "Highest") { userHighest5 += 1; }
+      }
     }
 
     // Get number of closed and on-time issues
@@ -210,6 +252,9 @@ const App = () => {
       if (assignee != null) {
         if (assignee.accountId == config.user1) { userClosed1 += 1; }
         else if (assignee.accountId == config.user2) { userClosed2 += 1; }
+        else if (assignee.accountId == config.user3) { userClosed3 += 1; }
+        else if (assignee.accountId == config.user4) { userClosed4 += 1; }
+        else if (assignee.accountId == config.user5) { userClosed5 += 1; }
       }
       // resolutiondate != null && duedate >= resolutiondate
       if (duedate == null || duedate >= resolutiondate) {
@@ -217,6 +262,9 @@ const App = () => {
         if (assignee != null) {
           if (assignee.accountId == config.user1) { userOnTime1 += 1; }
           else if (assignee.accountId == config.user2) { userOnTime2 += 1; }
+          else if (assignee.accountId == config.user3) { userOnTime3 += 1; }
+          else if (assignee.accountId == config.user4) { userOnTime4 += 1; }
+          else if (assignee.accountId == config.user5) { userOnTime5 += 1; }
         }
       }
     }
@@ -457,6 +505,9 @@ const Config = () => {
     <ConfigForm>
       <UserPicker label="User" name="user1" />
       <UserPicker label="User" name="user2" />
+      <UserPicker label="User" name="user3" />
+      <UserPicker label="User" name="user4" />
+      <UserPicker label="User" name="user5" />
     </ConfigForm>
   );
 };
