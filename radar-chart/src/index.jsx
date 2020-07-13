@@ -5,6 +5,7 @@ import ForgeUI, {
   Text,
   Button,
   ConfigForm,
+  Form,
   TextField,
   Image,
   UserPicker,
@@ -312,29 +313,32 @@ const App = () => {
   }
 
   // Transform to text (remove in final version)
-  const userComments1 = `Comments: ${userComments[0]}, Communication: ${userComments[0] / avgCommunication}`;
-  const userComments2 = `Comments: ${userComments[1]}, Communication: ${userComments[1] / avgCommunication}`;
-  numComments = `Total comments: ${numComments}, Average comments: ${avgCommunication}`;
-
-  userWatchedIssues1 = `Watches: ${userWatchedIssues1.issues.length}, Involvement: ${userWatchedIssues1.issues.length / avgInvolvement}`;
-  userWatchedIssues2 = `Watches: ${userWatchedIssues2.issues.length}, Involvement: ${userWatchedIssues2.issues.length / avgInvolvement}`;
-  numWatches = `Total watches: ${numWatches}, Average watches: ${avgInvolvement}`;
-
-  const userPriority1 = `Priority: [${userPriorities[0]}]: ${userP1}, Technical: ${userP1 / avgPriority}`;
-  const userPriority2 = `Priority: [${userPriorities[1]}]: ${userP2}, Technical: ${userP2 / avgPriority}`;
-  const totalPriority = `Total Priority: ${numLowest}, ${numLow}, ${numMedium}, ${numHigh}, ${numHighest}, Average Priority: ${avgPriority}`;
-
-  const userClosed1 = `Closed issues: ${userClosed[0]}, On-time issues: ${userOnTime[0]}, Met Deadlines: ${userOnTime[0] / userClosed[0]}, Deadlines: ${(userOnTime[0] / userClosed[0]) / avgDeadlines}`;
-  const userClosed2 = `Closed issues: ${userClosed[1]}, On-time issues: ${userOnTime[1]}, Met Deadlines: ${userOnTime[1] / userClosed[1]}, Deadlines: ${(userOnTime[1] / userClosed[1]) / avgDeadlines}`;
-  numClosed = `Total closed issues: ${numClosed}, Total on-time issues: ${numOnTime}, Average On-Time: ${avgDeadlines}`;
-
-  const userRecent1 = `Recently Closed: ${userRecents[0]}, Productivity: ${userRecents[0] / avgProductivity}`;
-  const userRecent2 = `Recently Closed: ${userRecents[1]}, Productivity: ${userRecents[1] / avgProductivity}`;
-  numRecent = `Total Recent: ${numRecent}, Average Recent: ${avgProductivity}`;
-
-  numUsers = `Total users: ${numUsers}`;
+  // const userComments1 = `Comments: ${userComments[0]}, Communication: ${userComments[0] / avgCommunication}`;
+  // const userComments2 = `Comments: ${userComments[1]}, Communication: ${userComments[1] / avgCommunication}`;
+  // numComments = `Total comments: ${numComments}, Average comments: ${avgCommunication}`;
+  //
+  // userWatchedIssues1 = `Watches: ${userWatchedIssues1.issues.length}, Involvement: ${userWatchedIssues1.issues.length / avgInvolvement}`;
+  // userWatchedIssues2 = `Watches: ${userWatchedIssues2.issues.length}, Involvement: ${userWatchedIssues2.issues.length / avgInvolvement}`;
+  // numWatches = `Total watches: ${numWatches}, Average watches: ${avgInvolvement}`;
+  //
+  // const userPriority1 = `Priority: [${userPriorities[0]}]: ${userP1}, Technical: ${userP1 / avgPriority}`;
+  // const userPriority2 = `Priority: [${userPriorities[1]}]: ${userP2}, Technical: ${userP2 / avgPriority}`;
+  // const totalPriority = `Total Priority: ${numLowest}, ${numLow}, ${numMedium}, ${numHigh}, ${numHighest}, Average Priority: ${avgPriority}`;
+  //
+  // const userClosed1 = `Closed issues: ${userClosed[0]}, On-time issues: ${userOnTime[0]}, Met Deadlines: ${userOnTime[0] / userClosed[0]}, Deadlines: ${(userOnTime[0] / userClosed[0]) / avgDeadlines}`;
+  // const userClosed2 = `Closed issues: ${userClosed[1]}, On-time issues: ${userOnTime[1]}, Met Deadlines: ${userOnTime[1] / userClosed[1]}, Deadlines: ${(userOnTime[1] / userClosed[1]) / avgDeadlines}`;
+  // numClosed = `Total closed issues: ${numClosed}, Total on-time issues: ${numOnTime}, Average On-Time: ${avgDeadlines}`;
+  //
+  // const userRecent1 = `Recently Closed: ${userRecents[0]}, Productivity: ${userRecents[0] / avgProductivity}`;
+  // const userRecent2 = `Recently Closed: ${userRecents[1]}, Productivity: ${userRecents[1] / avgProductivity}`;
+  // numRecent = `Total Recent: ${numRecent}, Average Recent: ${avgProductivity}`;
+  //
+  // numUsers = `Total users: ${numUsers}`;
   const userName1 = `User 1: ${userNames[0]}`;
   const userName2 = `User 2: ${userNames[1]}`;
+  const userName3 = `User 3: ${userNames[2]}`;
+  const userName4 = `User 4: ${userNames[3]}`;
+  const userName5 = `User 5: ${userNames[4]}`;
 
 
   /* ------------------------- DRAW RADAR CHART ------------------------- */
@@ -436,7 +440,7 @@ const App = () => {
   const poly =
     `<polygon
       points="${communication1.x},${communication1.y} ${involvement1.x},${involvement1.y} ${technical1.x},${technical1.y} ${deadlines1.x},${deadlines1.y} ${productivity1.x},${productivity1.y}"
-      style="fill:#5D1D1D;stroke:#5D1D1D;stroke-width:1;opacity:0.3;"
+      style="fill:#5D1D1D;stroke:#111;stroke-width:0.3;opacity:0.3;"
     />`;
 
   // Second user's polygon
@@ -448,7 +452,7 @@ const App = () => {
   const poly2 =
     `<polygon
       points="${communication2.x},${communication2.y} ${involvement2.x},${involvement2.y} ${technical2.x},${technical2.y} ${deadlines2.x},${deadlines2.y} ${productivity2.x},${productivity2.y}"
-      style="fill:#28305C;stroke:#28305C;stroke-width:1;opacity:0.3;"
+      style="fill:#28305C;stroke:#111;stroke-width:0.3;opacity:0.3;"
     />`;
 
   // Third poly
@@ -460,7 +464,7 @@ const App = () => {
   const poly3 =
     `<polygon
       points="${communication3.x},${communication3.y} ${involvement3.x},${involvement3.y} ${technical3.x},${technical3.y} ${deadlines3.x},${deadlines3.y} ${productivity3.x},${productivity3.y}"
-      style="fill:#1B7344;stroke:#1B7344;stroke-width:1;opacity:0.3;"
+      style="fill:#1B7344;stroke:#111;stroke-width:0.3;opacity:0.3;"
     />`;
 
   // fourth poly
@@ -472,7 +476,7 @@ const App = () => {
   const poly4 =
     `<polygon
       points="${communication4.x},${communication4.y} ${involvement4.x},${involvement4.y} ${technical4.x},${technical4.y} ${deadlines4.x},${deadlines4.y} ${productivity4.x},${productivity4.y}"
-      style="fill:#6F39AD;stroke:#6F39AD;stroke-width:1;opacity:0.3;"
+      style="fill:#6F39AD;stroke:#111;stroke-width:0.3;opacity:0.3;"
     />`;
 
   // fifth poly
@@ -484,47 +488,39 @@ const App = () => {
   const poly5 =
     `<polygon
       points="${communication5.x},${communication5.y} ${involvement5.x},${involvement5.y} ${technical5.x},${technical5.y} ${deadlines5.x},${deadlines5.y} ${productivity5.x},${productivity5.y}"
-      style="fill:#1A8584;stroke:#1A8584;stroke-width:1;opacity:0.3;"
+      style="fill:#1A8584;stroke:#111;stroke-width:0.3;opacity:0.3;"
     />`;
 
   // Labels for each dimension
   const caption =
     `<text x="495" y="327" fill="#777" >Communication</text>
-    <text x="225" y="520" fill="#777" >Involvement</text>
-    <text x="0" y="327" fill="#777" >Technical</text>
+    <text x="225" y="520" fill="#777" >Supportiveness</text>
+    <text x="0" y="327" fill="#777" >Expertise</text>
     <text x="50" y="30" fill="#777" >Meeting Deadlines</text>
     <text x="399" y="45" fill="#777" >Productivity</text>`;
+
+  const names =
+  `<text x="500" y="400" fill="#5D1D1D">${userNames[0]}</text>
+  <text x="500" y="420" fill="#28305C">${userNames[1]}</text>
+  <text x="500" y="440" fill="#1B7344">${userNames[2]}</text>
+  <text x="500" y="460" fill="#6F39AD">${userNames[3]}</text>
+  <text x="500" y="480" fill="#1A8584">${userNames[4]}</text>`;
 
   // Combine all elements for the final svg
   const svg = `<svg xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 ${radius*2+100} ${radius*2+100}"
                   width="${radius*2}"
                   height="${radius*2}"
-                >` + `<g>` + circle + line + poly + poly2 + poly3 + poly4 + poly5 + caption + `</g>` + `</svg>`;
+                >` + `<g>` + circle + line + poly + poly2 + poly3 + poly4 + poly5 + caption + names + `</g>` + `</svg>`;
 
   // Use the configuration values
   return (
     <Fragment>
-      <Text content={numUsers} />
-      <Text content={numComments} />
-      <Text content={numWatches} />
-      <Text content={totalPriority} />
-      <Text content={numClosed} />
-      <Text content={numRecent} />
-
       <Text content={userName1} />
-      <Text content={userComments1} />
-      <Text content={userWatchedIssues1} />
-      <Text content={userPriority1} />
-      <Text content={userClosed1} />
-      <Text content={userRecent1} />
-
       <Text content={userName2} />
-      <Text content={userComments2} />
-      <Text content={userWatchedIssues2} />
-      <Text content={userPriority2} />
-      <Text content={userClosed2} />
-      <Text content={userRecent2} />
+      <Text content={userName3} />
+      <Text content={userName4} />
+      <Text content={userName5} />
 
       <Image
         src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
