@@ -550,7 +550,6 @@ export const run = render(
   <Macro
     app={<App />}
     config={<Config />}
-    defaultConfig={{
-    }}
+    defaultConfig={{}}
   />
 );
